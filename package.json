@@ -1,0 +1,28 @@
+{
+  "name": "emmo-model",
+  "version": "1.0.0",
+  "description": "flexible lightweight model manager, for generating sql script/validation/create/update/findOrCreate etc...",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/*.js"
+  },
+  "keywords": [
+    "model",
+    "sql",
+    "generator",
+    "update",
+    "create",
+    "findOrCreate"
+  ],
+  "author": "Klesh Wong",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^2.9.34",
+    "i": "^0.3.3",
+    "lodash": "^3.10.1"
+  },
+  "devDependencies": {
+    "pg": "^4.4.1",
+    "should": "^7.1.0"
+  }
+}

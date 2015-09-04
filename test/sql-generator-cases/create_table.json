@@ -1,0 +1,42 @@
+{
+  "Department": {
+    "tableName": "Departments",
+    "columns": {
+      "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+      "title": { "type": "string", "length": 50, "allowNull": false },
+      "remark": { "type": "string" }
+    },
+    "primaryKeys": {
+      "name": "PK_Departments",
+      "columns": ["id"]
+    }
+  },
+  "User": {
+    "tableName": "Users",
+    "columns": {
+      "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+      "nick": { "type": "string", "length": 50, "allowNull": false },
+      "password": { "type": "string", "length": 40 },
+      "departmentId": { "type": "int" }
+    },
+    "primaryKeys": {
+      "name": "PK_Users",
+      "columns": ["id"]
+    },
+    "indexes": [
+      {
+        "name": "IX_Users_nick",
+        "columns": { "nick": "ASC" },
+        "unique": true
+      }
+    ],
+    "foreignKeys": [
+      {
+        "name": "FK_Users_Departments",
+        "columns": ["departmentId"],
+        "refer": "Department",
+        "onDelete": "SET NULL"
+      }
+    ]
+  }
+}
