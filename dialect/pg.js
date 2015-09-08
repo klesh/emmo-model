@@ -1,12 +1,14 @@
+var _ = require('lodash');
 var base = require('./base.js');
 
-exports.quote = function(name) {
-  return '"' + name + '"';
-};
+_.extend(module.exports, base, {
+  quote: function(name) {
+    return '"' + name + '"';
+  },
+  columnType: function(columnDef) {
+    if (columnDef.autoIncrement)
+      return columnDef.type == 'int' ? 'serial' : 'bigserial';
 
-exports.columnType = function(columnDef) {
-  if (columnDef.autoIncrement)
-    return columnDef.type == 'int' ? 'serial' : 'bigserial';
-
-  return base.columnType(columnDef);
-};
+    return base.columnType(columnDef);
+  }
+});

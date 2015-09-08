@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+var argv = require('yargs').argv;
+var _ = require('lodash');
+
+var command = argv._[0];
+
+var commanders = {
+  migrate: function(argv) {
+    console.log(argv._);
+  }
+};
+
+if (commanders.hasOwnProperty(command)) {
+  commanders[command](argv);
+} else {
+  console.log('Usage: em <command>');
+  console.log();
+  console.log('where <command> is one of:');
+  console.log('  ' + _.keys(commanders).join(', '));
+}

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "flexible lightweight model manager, for generating sql script/validation/create/update/findOrCreate etc...",
   "main": "index.js",
+  "repository": "git@github.com:klesh/emmo-model.git",
   "scripts": {
     "test": "mocha test/*.js"
   },
@@ -19,7 +20,8 @@
   "dependencies": {
     "bluebird": "^2.9.34",
     "i": "^0.3.3",
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "yargs": "^3.24.0"
   },
   "devDependencies": {
     "pg": "^4.4.1",

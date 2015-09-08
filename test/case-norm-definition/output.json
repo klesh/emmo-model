@@ -1,0 +1,48 @@
+{
+  "User": {
+    "tableName": "Users",
+    "columns": {
+      "id": {
+        "type": "int",
+        "primaryKey": true
+      },
+      "nick": {
+        "type": "string",
+        "length": 50,
+        "allowNull": false
+      },
+      "isAdmin": {
+        "type": "bool"
+      },
+      "email": {
+        "type": "string",
+        "length": 100
+      },
+      "departmentId": {
+        "type": "int"
+      }
+    },
+    "primaryKeys": {
+      "name": "PK_Users"
+    },
+    "indexes": [
+      {
+        "name": "IX_Users_nick",
+        "unique": true,
+        "columns": {
+          "columnName": "ASC"
+        }
+      }
+    ],
+    "foreignKeys": [
+      {
+        "name": "FK_Users_departmentId",
+        "columns": [
+          "departmentId"
+        ],
+        "refer": "Department",
+        "onDelete": "SET NULL"
+      }
+    ]
+  }
+}
