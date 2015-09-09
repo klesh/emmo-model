@@ -4,7 +4,8 @@
     "columns": {
       "id": {
         "type": "int",
-        "primaryKey": true
+        "primaryKey": true,
+        "autoIncrement": true
       },
       "nick": {
         "type": "string",
@@ -23,7 +24,10 @@
       }
     },
     "primaryKeys": {
-      "name": "PK_Users"
+      "name": "PK_Users",
+      "columns": [
+        "id"
+      ]
     },
     "indexes": [
       {

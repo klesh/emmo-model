@@ -10,6 +10,7 @@ Promise.longStackTraces();
   
 var jsonPatt = /.json$/;
 var connectionString = '/var/run/postgresql %s';
+var baseName = process.argv[2];
 
 var getConnectionString = function(database) {
   database = database || 'postgres';
@@ -27,10 +28,14 @@ var readline = function(prompt) {
   });
 };
 
-var generateResult = function(casesDirPath, getScript) {
+var generateResult = function(casesDirPath, getScript, initScript) {
   fs.readdir(casesDirPath, function(err, fileNames) {
     Promise.map(fileNames, function(fileName) {
+
       if (jsonPatt.test(fileName)) {
+        if (baseName && baseName != path.basename(fileName, '.json')) {
+          return;
+        }
         var definition = require(casesDirPath + '/' + fileName);
         var script = getScript(definition);
         
@@ -46,7 +51,15 @@ var generateResult = function(casesDirPath, getScript) {
                 return pg.connectAsync(getConnectionString('sql_gen_test'));
               })
               .spread(function(client2, release2) { 
-                return client2.queryAsync(script).then(release2); 
+                var promise;
+                if (initScript) {
+                  promise = client2.queryAsync(initScript(definition));
+                } else {
+                  promise = Promise.resolve();
+                }
+                return promise.then(function() {
+                  return client2.queryAsync(script);
+                }).finally(release2);
               })
               .then(function() {
                 console.log('');

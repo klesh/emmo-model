@@ -11,6 +11,8 @@ if (require.main == module) {
   // generate script then and try run in database server, write to disk if everything went fine...
   runner.generate(casesDirPath, function(data) {
     return sql.migrateScript('pg', data.old, data.new);
+  }, function(data) {
+    return sql.initialScript('pg', data.old);
   });
 } else {
   // run all definition convertion, compare to existing sql file(the one we are sure is well formatted).

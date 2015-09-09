@@ -22,49 +22,22 @@
   },
 
   "new": {
-    "Role": {
+    "Group": {
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
       },
       "options": {
-        "tableName": "Roles"
+        "tableName": "Groups"
       },
       "primaryKeys": {
-        "name": "PK_Roles",
+        "name": "PK_Groups",
         "columns": [ "id" ]
       },
       "indexes": [
         { 
-          "name": "IDX_Roles_name",
+          "name": "IDX_Groups_name",
           "columns": { "name": "ASC" }
-        }
-      ]
-    },
-    "User": {
-      "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "nick": { "type": "string", "length": 50, "unique": true },
-        "roleId": { "type": "int", "refer": "Role" }
-      },
-      "options": {
-        "tableName": "Users"
-      },
-      "primaryKeys": {
-        "name": "PK_Users",
-        "columns": [ "id" ]
-      },
-      "indexes": [
-        { 
-          "name": "IDX_Users_nick",
-          "columns": { "nick": "ASC" }
-        }
-      ],
-      "foreignKeys": [
-        {
-          "name": "FK_Users_Roles",
-          "refer": "Role",
-          "columns": ["roleId"]
         }
       ]
     }

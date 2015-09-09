@@ -1,0 +1,4 @@
+ALTER TABLE "Roles" RENAME COLUMN "name" TO "title";
+/***** PLACE YOUR CUSTOMIZE SCRIPT HER *****/
+
+/******** END YOUR CUSTOMIZE SCRIPT ********/

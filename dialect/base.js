@@ -69,6 +69,26 @@ module.exports = {
 
     return script.join(' ');
   },
+  /*  modelDef = {
+   *    columns: {
+   *      id: { type: 'int', ... }
+   *      ,,,
+   *    }
+   *    options: { tableName: 'tableName' },
+   *    primaryKeys: {...}
+   *    indexes: []
+   *    foreignKeys: []
+   *  }
+   */
+  createModel: function(modelDef) {
+    var script = [];
+    script.push(this.createTable(modelDef.options.tableName, modelDef.columns));
+    script.push(this.createPrimaryKeys(modelDef.options.tableName, modelDef.primaryKeys));
+    _.forEach(modelDef.indexes, function(indexInfo) {
+      script.push(this.createIndex(modelDef.options.tableName, indexInfo));
+    }, this);
+    return script.join('\n');
+  },
   /* return create table statement 
    * (from) tableName: 'Users', 
    *        tableDef: { 
@@ -79,7 +99,6 @@ module.exports = {
    *          name varchar(50) NOT NULL,
    *          password varchar(40)
    *        );
-   *        ALTER TABLE "Users" ADD CONSTRAINT "PK_Users" PRIMARY KEY ("name")';
    */
   createTable: function(tableName, tableDef) {
     return util.format('CREATE TABLE %s (\n%s\n)', 
