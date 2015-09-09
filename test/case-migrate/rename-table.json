@@ -1,5 +1,24 @@
 {
   "old": {
+    "Smoke": {
+      "columns": {
+        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+        "title": { "type": "string", "length": 50, "unique": true }
+      },
+      "options": {
+        "tableName": "Smokes"
+      },
+      "primaryKeys": {
+        "name": "PK_Smokes",
+        "columns": [ "id" ]
+      },
+      "indexes": [
+        { 
+          "name": "IDX_Smokes_name",
+          "columns": { "name": "DESC" }
+        }
+      ]
+    },
     "Role": {
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
