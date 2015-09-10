@@ -1,12 +1,10 @@
 {
   "old": {
     "Smoke": {
+      "tableName": "Smokes",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "title": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Smokes"
       },
       "primaryKeys": {
         "name": "PK_Smokes",
@@ -15,17 +13,15 @@
       "indexes": [
         { 
           "name": "IDX_Smokes_name",
-          "columns": { "name": "DESC" }
+          "columns": { "title": "DESC" }
         }
       ]
     },
     "Role": {
+      "tableName": "Roles",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -42,12 +38,10 @@
 
   "new": {
     "Group": {
+      "tableName": "Groups",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Groups"
       },
       "primaryKeys": {
         "name": "PK_Groups",

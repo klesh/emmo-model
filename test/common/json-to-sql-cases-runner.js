@@ -4,6 +4,8 @@ var Promise = require('bluebird');
 var pg = require('pg');
 var should = require('should');
 var util = require('util');
+var _ = require('lodash');
+var colors = require('colors');
 
 Promise.promisifyAll(pg);
 Promise.longStackTraces();
@@ -30,40 +32,53 @@ var readline = function(prompt) {
 
 var generateResult = function(casesDirPath, getScript, initScript) {
   fs.readdir(casesDirPath, function(err, fileNames) {
-    Promise.map(fileNames, function(fileName) {
+    fileNames = _.filter(fileNames, function(f) { 
+      if (baseName && baseName != path.basename(f, '.json'))
+        return false;
+      return jsonPatt.test(f); 
+    });
 
-      if (jsonPatt.test(fileName)) {
-        if (baseName && baseName != path.basename(fileName, '.json')) {
-          return;
-        }
+    var chain = Promise.resolve();
+
+    _.forEach(fileNames, function(fileName) {
+      chain = chain.then(function() {
         var definition = require(casesDirPath + '/' + fileName);
         var script = getScript(definition);
+        var title = '*** CASE ' + fileName + ':';
+        console.log('');
+        console.log(title.green);
         
         return pg.connectAsync(getConnectionString())
           .spread(function(client, release) {
-            console.log('*** CASE ' + fileName + ':');
-            console.log('');
-            console.log(script);
             return client.queryAsync('DROP DATABASE IF EXISTS sql_gen_test;')
               .then(function() { return client.queryAsync('CREATE DATABASE sql_gen_test;'); })
               .then(release)
               .then(function() {
-                return pg.connectAsync(getConnectionString('sql_gen_test'));
+                return new Promise(function(resolve, reject) {
+                  var client2 = new pg.Client(getConnectionString('sql_gen_test'));
+                  client2.connect(function(err) {
+                    if (err)
+                      return reject(err);
+                    return resolve([ client2, client2.end.bind(client2) ]);
+                  });
+                });
               })
               .spread(function(client2, release2) { 
                 var promise;
                 if (initScript) {
-                  promise = client2.queryAsync(initScript(definition));
+                  var init = initScript(definition);
+                  console.log(init.grey);
+                  promise = client2.queryAsync(init);
                 } else {
                   promise = Promise.resolve();
                 }
                 return promise.then(function() {
+                  console.log(script);
                   return client2.queryAsync(script);
                 }).finally(release2);
               })
               .then(function() {
-                console.log('');
-                return readline('*** Does generated sql script seems right(Y/n)?')
+                return readline('*** Does generated sql script seems right(Y/n)?'.red)
                   .then(function(positive) {
                     if (!positive) return;
 
@@ -72,7 +87,12 @@ var generateResult = function(casesDirPath, getScript, initScript) {
                   });
               });
           });
-      }
+      });
+    });
+
+    chain.then(function() {
+      console.log('Done');
+      process.exit(0);
     });
   });
 };

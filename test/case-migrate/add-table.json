@@ -1,12 +1,10 @@
 {
   "old": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -15,7 +13,8 @@
       "indexes": [
         { 
           "name": "IDX_Roles_name",
-          "columns": { "name": "DESC" }
+          "columns": { "name": "DESC" },
+          "unique": true
         }
       ]
     }
@@ -23,12 +22,10 @@
 
   "new": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -37,18 +34,17 @@
       "indexes": [
         { 
           "name": "IDX_Roles_name",
-          "columns": { "name": "ASC" }
+          "columns": { "name": "DESC" },
+          "unique": true
         }
       ]
     },
     "User": {
+      "tableName": "Users",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "nick": { "type": "string", "length": 50, "unique": true },
         "roleId": { "type": "int", "refer": "Role" }
-      },
-      "options": {
-        "tableName": "Users"
       },
       "primaryKeys": {
         "name": "PK_Users",
@@ -57,7 +53,8 @@
       "indexes": [
         { 
           "name": "IDX_Users_nick",
-          "columns": { "nick": "ASC" }
+          "columns": { "nick": "ASC" },
+          "unique": true
         }
       ],
       "foreignKeys": [

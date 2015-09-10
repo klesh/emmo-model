@@ -1,12 +1,10 @@
 {
   "old": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+        "id": { "type": "int", "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -23,12 +21,10 @@
 
   "new": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+        "id": { "type": "int", "autoIncrement": true },
         "title": { "type": "string", "length": 50, "unique": true }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -36,8 +32,8 @@
       },
       "indexes": [
         { 
-          "name": "IDX_Roles_name",
-          "columns": { "name": "DESC" }
+          "name": "IDX_Roles_title",
+          "columns": { "title": "DESC" }
         }
       ]
     }

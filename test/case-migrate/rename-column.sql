@@ -1,4 +1,5 @@
 ALTER TABLE "Roles" RENAME COLUMN "name" TO "title";
-/***** PLACE YOUR CUSTOMIZE SCRIPT HER *****/
+ALTER INDEX "IDX_Roles_name" RENAME To "IDX_Roles_title";
+/***** PLACE YOUR CUSTOMIZE SCRIPT HERE *****/
 
-/******** END YOUR CUSTOMIZE SCRIPT ********/
+/******** END YOUR CUSTOMIZE SCRIPT *********/

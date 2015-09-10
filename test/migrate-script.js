@@ -3,7 +3,6 @@ var sql = require('../lib/sql-generator.js');
 var path = require('path');
 var runner = require('./common/json-to-sql-cases-runner.js');
 
-
 var casesDirPath = path.resolve(__dirname, 'case-migrate');
 
 if (require.main == module) {

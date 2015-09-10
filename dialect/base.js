@@ -69,12 +69,19 @@ module.exports = {
 
     return script.join(' ');
   },
+  createDatabase: function(database) {
+    return util.format('CREATE DATABASE %s', this.quote(database)) + this.separator;
+  },
+  dropDatabase: function(database) {
+    var quotedName = this.quote(database);
+    return util.format('SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = %s AND pid <> pg_backend_pid();\nDROP DATABASE %s', quotedName, quotedName);
+  },
   /*  modelDef = {
+   *    tableName: 'tableName',
    *    columns: {
    *      id: { type: 'int', ... }
    *      ,,,
    *    }
-   *    options: { tableName: 'tableName' },
    *    primaryKeys: {...}
    *    indexes: []
    *    foreignKeys: []
@@ -82,10 +89,10 @@ module.exports = {
    */
   createModel: function(modelDef) {
     var script = [];
-    script.push(this.createTable(modelDef.options.tableName, modelDef.columns));
-    script.push(this.createPrimaryKeys(modelDef.options.tableName, modelDef.primaryKeys));
+    script.push(this.createTable(modelDef.tableName, modelDef.columns));
+    script.push(this.createPrimaryKeys(modelDef.tableName, modelDef.primaryKeys));
     _.forEach(modelDef.indexes, function(indexInfo) {
-      script.push(this.createIndex(modelDef.options.tableName, indexInfo));
+      script.push(this.createIndex(modelDef.tableName, indexInfo));
     }, this);
     return script.join('\n');
   },
@@ -168,8 +175,7 @@ module.exports = {
                       this.quote(newName)) + this.separator;
   },
   dropIndex: function(tableName, name) {
-    return util.format('ALTER TABLE %s DROP INDEX %s',
-                      this.quote(tableName),
+    return util.format('DROP INDEX %s',
                       this.quote(name)) + this.separator;
   },
   createForeignKey: function(tableName, referTableInfo, foreignKeyInfo) {
@@ -198,5 +204,10 @@ module.exports = {
     return util.format('ALTER TABLE %s DROP CONSTRAINT %s',
                       this.quote(tableName),
                       this.quote(name)) + this.separator;
+  },
+
+  // start CURD statement
+  select: function(tableName, options) {
+    
   }
 };

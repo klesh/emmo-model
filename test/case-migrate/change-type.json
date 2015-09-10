@@ -1,13 +1,11 @@
 {
   "old": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true },
         "permission": { "type": "jsonb" }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
@@ -24,13 +22,11 @@
 
   "new": {
     "Role": {
+      "tableName": "Roles",
       "columns": {
         "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "type": "string", "length": 50, "unique": true },
         "permission": { "type": "string" }
-      },
-      "options": {
-        "tableName": "Roles"
       },
       "primaryKeys": {
         "name": "PK_Roles",
