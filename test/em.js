@@ -7,20 +7,22 @@ em.init({
   migrationsPath: path.resolve(__dirname, 'migrations'),
   dialect: 'pg',
   connectionString: '/var/run/postgresql %s',
-  database: 'hh'
+  database: 'emtest'
 });
 
-console.log(em.definition);
-
-em.createOrMigrate().then(function() {
-  em.exec(function(db) {
-    return db.User.create({
-      nick: 'klesh',
-      isAdmin: true,
-      email: 'klesh@qq.com'
-    }).then(function() {
-      return db.User.find({nick: 'klesh'});
-    }).then(function(user){
+describe('Basic Function, create database and insert data', function() {
+  em.remove().then(function() {
+    return em.createOrMigrate();
+  }).then(function() {
+    return em.scope(function(db) {
+      return db.insert('User', {
+        nick: 'klesh',
+        isAdmin: true,
+        email: 'klesh@qq.com'
+      }).then(function() {
+        return db.find('User', {nick: 'klesh'});
+      });
+    }).then(function(user) {
       user.nick.should.be.exactly('klesh');
       user.isAdmin.should.be.true();
       user.email.should.be.exactly('klesh@qq.com');

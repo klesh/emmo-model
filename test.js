@@ -1,12 +1,14 @@
-var Promise = require('bluebird');
 
-var array = [3, 2, 1];
+function Foo() {
 
-Promise.each(array, function(n) {
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
-      console.log(n + Date());
-      resolve(n);
-    }, n * 1000);
-  });
-});
+}
+
+Foo.prototype.sayHi = function() {
+  console.log('hi');
+};
+
+var foo = new Foo();
+foo.sayHi = function() {
+  console.log('hello');
+};
+foo.sayHi();
