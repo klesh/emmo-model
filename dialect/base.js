@@ -3,6 +3,8 @@ var _ = require('lodash');
 
 // all comments asssume using pg dialect
 module.exports = {
+  // default database name, for creating/droping database
+  defaultDatabase: '',
   // auto increment column statement;
   autoIncrement: '',
   // separator between sql statement;
@@ -10,6 +12,22 @@ module.exports = {
   // quote resource name,
   quote: function(name) {
     return name;
+  },
+  // generate variable placeholds, for INSERT statement
+  placeholds: function(columns) {
+    return columns.map(this.placehold).join(', ');
+  },
+  // return a parameter placehold base on column name or index or pure constant mark
+  placehold: function(column, index) {
+    return '$' + (index * 1 + 1);
+  },
+  // initialize SqlParams, Array or Object depend on dialect
+  parameterize: function(data, columns) {
+    return columns.map(function(c) { return data[c]; });
+  },
+  // push new param entry into params collection.
+  addParam: function(params, param, name) {
+    params.push(param);
   },
   // quote and join column names separated by ,
   // ['col1', 'col2'] to  '"col1", "col2"'
@@ -205,9 +223,42 @@ module.exports = {
                       this.quote(tableName),
                       this.quote(name)) + this.separator;
   },
-
-  // start CURD statement
-  select: function(tableName, options) {
+  "select": function(tableDef, options) {
     
+  },
+  "insert": function(tableDef, data) {
+    var self = this;
+    var columns = _.intersection(_.keys(tableDef.columns), _.keys(data));
+    return util.format('INSERT INTO %s (%s) VALUES (%s)' + this.separator,
+                      this.quote(tableDef.tableName),
+                      columns.map(function(c){ return self.quote(c); }), 
+                      this.placeholds(columns));
+  },
+  "update": function(tableDef, data) {
+    var self = this;
+    var columns = _.intersection(_.keys(tableDef.columns), _.keys(data));
+    return util.format('UPDATE %s SET %s WHERE %s' + this.separator,
+                      this.quote(tableDef.tableName),
+                      columns.map(function(c, n) { 
+                        return util.format('%s=%s', self.quote(c), self.placehold(c, n));
+                      }).join(', '),
+                      tableDef.primaryKeys.columns.map(function(p, n) {
+                        return util.format('%s=%s', self.quote(p), self.placehold(p, n+columns.length));
+                      }).join(', '));
+  },
+  "delete": function(tableDef, data) {
+    var self = this;
+    return util.format('DELETE FROM %s WHERE %s',
+                      this.quote(tableDef.tableName),
+                      this.where(tableDef, data, tableDef.primaryKeys.columns));
+  },
+  "where": function(tableDef, data, where, params) {
+    index = index || 0;
+    var self = this;
+    if (_.isArray(where)) where = _.pick(data, where);
+    return where.map(function(v, k) { 
+      self.addParam(params, v, k);
+      return util.format('%s=%s', self.quote(k), self.placehold(k, params.length - 1)); 
+    }).join(', ');
   }
 };

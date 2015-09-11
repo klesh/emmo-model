@@ -4,6 +4,7 @@ var _ = require('lodash');
 var normalizeDef = require('./lib/norm-definition.js');
 
 function EmmoModel() {
+  // initialize definition, add _Migration model to store model definition.
   this.definition = {
     __Migration: { // store migration history
       columns: {
@@ -24,13 +25,13 @@ EmmoModel.prototype.init = function(options) {
     database: ''
   }, options);
 
-  this.loadModels();
-};
-
-EmmoModel.prototype.loadModels = function() {
+  // load models
   fs.readdirSync(this.modelsPath).forEach(function(fileName) {
     require(path.resolve(this.modelsPath, fileName));
   }, this);
+
+  // load dialect
+  this.agent = require('./dialect/' + this.dialect + '.js');
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
@@ -42,8 +43,7 @@ EmmoModel.prototype.define = function(name, columns, options) {
 
 EmmoModel.prototype.getInitialScript = function() {
   if (!this.initialScript) {
-    var agent = require('./dialect/' + this.dialect);
-    this.initialScript = agent.initialScript(normalizeDef(this.definition));
+    this.initialScript = this.agent.initialScript(normalizeDef(this.definition));
   }
   return this.initialScript;
 };
@@ -51,15 +51,18 @@ EmmoModel.prototype.getInitialScript = function() {
 EmmoModel.prototype.connect = function(database) {
   if (!this.connectionString)
     throw new Error('ConnectionString is empty');
-  var agent = require('./dialect/' + this.dialect);
-  return agent.connect(this.connectionString, database).spread(function(connection, release) {
-    return [agent, connection, release];
+  return this.agent.connect(this.connectionString, database).spread(function(connection, release) {
+    return new Database(this, connection, release);
   });
 };
 
-EmmoModel.prototype.exec = function(database, job) {
-  return this.connect(database).spread(function(agent, connection, release) {
-    return job(new Context(agent, connection)).finally(release);
+EmmoModel.prototype.scope = function(databaseName, job) {
+  if (_.isFunction(databaseName)) {
+    job = databaseName;
+    databaseName = this.agent.defaultDatabase
+  }
+  return this.connect(databaseName).then(function(database) {
+    return job(database).finally(database.release);
   });
 };
 
@@ -75,7 +78,7 @@ EmmoModel.prototype.createOrMigrate = function() {
 };
 
 EmmoModel.prototype.create = function(database) {
-  return this.exec('', function(db) {
+  return this.exec(function(db) {
     return db.createDatabase(database);
   });
 };
