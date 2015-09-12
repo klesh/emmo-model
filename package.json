@@ -21,6 +21,7 @@
     "bluebird": "^2.9.34",
     "i": "^0.3.3",
     "lodash": "^3.10.1",
+    "moment": "^2.10.6",
     "yargs": "^3.24.0"
   },
   "devDependencies": {

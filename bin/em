@@ -2,12 +2,72 @@
 
 var argv = require('yargs').argv;
 var _ = require('lodash');
+var moment = require('moment');
+var path = require('path');
+var fs = require('fs');
+var em = require('../index.js');
+var Sql = require('../lib/sql-generator.js');
+var colors = require('colors');
+var util = require('util');
 
 var command = argv._[0];
 
 var commanders = {
   migrate: function(argv) {
-    console.log(argv._);
+    var name = argv._[1];
+    if (!name)
+      return console.log('Please assign migration name');
+
+    var config = require(path.resolve('./em.json'));
+    em.init(config);
+    return em.scope(function(db) {
+      return db.selectOne('_Migration', {order: {uid: 'DESC'}, limit: 1});
+    }).then(function(lastMigration) {
+      var uid = moment().format('YYYYMMDDHHmmss') * 1;
+      var fullName = uid + '-' + name + '.sql';
+      var lastModels = JSON.parse(lastMigration.models);
+      var migrateScript = [
+        Sql.migrateScript(config.dialect, lastModels, em.normalized),
+        util.format('INSERT INTO %s (%s) VALUES (%s)',
+                   em.agent.quote('_Migrations'),
+                   ['uid', 'name', 'models'].map(em.agent.quote).join(', '),
+                   [uid, em.agent.escape(fullName), em.agent.escape(em.getNormalizedJson())].map(function(c){
+                     return util.format("'%s'", c);
+                   }))
+      ].map(function(sql) { return sql + em.agent.separator; }).join('\n');
+
+      return fs.writeFile(path.resolve(em.migrationsPath, fullName), migrateScript, function() {
+        console.log("Migration %s is created successfully.", fullName);
+        process.exit(0);
+      });
+    });
+  },
+  init: function(argv) {
+    var configPath = path.resolve('./em.json');
+    fs.exists(configPath, function(exists) {
+      if (exists)
+        return console.log('em.json already exists.');
+
+      var samplePath = path.resolve(__dirname, '..', 'em.json');
+      var sample = fs.readFileSync(samplePath);
+      fs.writeFileSync(configPath, sample);
+
+      var modelsPath = path.resolve('./models');
+      if (!fs.existsSync(modelsPath))
+        fs.mkdirSync(modelsPath);
+      var migrationsPath = path.resolve('./migrations');
+      if (!fs.existsSync(migrationsPath))
+        fs.mkdirSync(migrationsPath);
+      console.log('em.json has been created successfully.');
+    });
+  },
+  run: function(argv) {
+    var config = require(path.resolve('./em.json'));
+    em.init(config);
+    em.createOrMigrate().then(function() {
+      console.log('create/migrate finish successfully');
+      process.exit(0);
+    });
   }
 };
 

@@ -34,7 +34,7 @@
         "name": "IX_Users_nick",
         "unique": true,
         "columns": {
-          "columnName": "ASC"
+          "nick": "ASC"
         }
       }
     ],

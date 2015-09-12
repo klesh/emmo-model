@@ -9,9 +9,29 @@ module.exports = {
   autoIncrement: '',
   // separator between sql statement;
   separator: ';', 
+  // parameter placehold for sql query statement
+  placehold: function(index) {
+    return '?';
+  },
+  // transfer query into offset format
+  offset: function(sql, index) {
+    return sql + ' OFFSET ' + this.placehold(index);
+  },
+  // transfer query into limit format
+  limit: function(sql, index) {
+    return sql + ' LIMIT ' + this.placehold(index);
+  },
+  // convert query result into plain object/array
+  result: function(result) {
+    return result.rows;
+  },
   // quote resource name,
   quote: function(name) {
     return name;
+  },
+  // escape text constant
+  escape: function(text) {
+    return text.replace(/'/g, "''");
   },
   // quote and join column names separated by ,
   // ['col1', 'col2'] to  '"col1", "col2"'
@@ -75,8 +95,7 @@ module.exports = {
     return util.format('CREATE DATABASE %s', this.quote(database)) + this.separator;
   },
   dropDatabase: function(database) {
-    var quotedName = this.quote(database);
-    return util.format('SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = %s AND pid <> pg_backend_pid();\nDROP DATABASE %s', quotedName, quotedName);
+    return util.format('DROP DATABASE IF EXISTS %s', this.quote(database)) + this.separator;
   },
   /*  modelDef = {
    *    tableName: 'tableName',

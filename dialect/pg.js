@@ -8,59 +8,36 @@ Promise.promisifyAll(pg);
 
 _.extend(module.exports, base, {
   defaultDatabase: 'postgres',
+  placehold: function(index) {
+    return '$' + (index * 1 + 1);
+  },
   quote: function(name) {
     return '"' + name + '"';
+  },
+//  dropDatabase: function(name) {
+//    return util.format("SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '%s' AND pid <> pg_backend_pid();", name) + "\n" + base.dropDatabase(name);
+//  
+//  },
+  returnId: function(connection) {
+    return this.query(connection, "SELECT LASTVAL()").then(function(result) {
+      return result.rows[0].lastval;
+    });
   },
   columnType: function(columnDef) {
     if (columnDef.autoIncrement)
       return columnDef.type == 'int' ? 'serial' : 'bigserial';
+    
+    if (columnDef.type == 'float')
+      return 'real';
 
     return base.columnType(columnDef);
   },
   // return a promise connection instance
-  connect: function(connectionString, database) {
-    return pg.connectAsync(util.format(connectionString, database || defaultDatabase));
+  connect: function(connectionString) {
+    return pg.connectAsync(connectionString);
   },
   // return a promise query instance
   query: function(connection, sqlScript, sqlParams) {
     return connection.queryAsync(sqlScript, sqlParams);
-  },
-  "select": function(tableDef, options) {
-    
-  },
-  "insert": function(tableDef, data) {
-    var self = this;
-    var columns = _.intersection(_.keys(tableDef.columns), _.keys(data));
-    return util.format('INSERT INTO %s (%s) VALUES (%s)' + this.separator,
-                      this.quote(tableDef.tableName),
-                      columns.map(function(c){ return self.quote(c); }), 
-                      this.placeholds(columns));
-  },
-  "update": function(tableDef, data) {
-    var self = this;
-    var columns = _.intersection(_.keys(tableDef.columns), _.keys(data));
-    return util.format('UPDATE %s SET %s WHERE %s' + this.separator,
-                      this.quote(tableDef.tableName),
-                      columns.map(function(c, n) { 
-                        return util.format('%s=%s', self.quote(c), self.placehold(c, n));
-                      }).join(', '),
-                      tableDef.primaryKeys.columns.map(function(p, n) {
-                        return util.format('%s=%s', self.quote(p), self.placehold(p, n+columns.length));
-                      }).join(', '));
-  },
-  "delete": function(tableDef, data) {
-    var self = this;
-    return util.format('DELETE FROM %s WHERE %s',
-                      this.quote(tableDef.tableName),
-                      this.where(tableDef, data, tableDef.primaryKeys.columns));
-  },
-  "where": function(tableDef, data, where, params) {
-    index = index || 0;
-    var self = this;
-    if (_.isArray(where)) where = _.pick(data, where);
-    return where.map(function(v, k) { 
-      self.addParam(params, v, k);
-      return util.format('%s=%s', self.quote(k), self.placehold(k, params.length - 1)); 
-    }).join(', ');
   }
 });

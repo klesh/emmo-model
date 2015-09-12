@@ -10,22 +10,28 @@ em.init({
   database: 'emtest'
 });
 
-describe('Basic Function, create database and insert data', function() {
-  em.remove().then(function() {
-    return em.createOrMigrate();
-  }).then(function() {
-    return em.scope(function(db) {
-      return db.insert('User', {
+describe('EmmoModel Test', function() {
+  it('Basic Function, create database and insert data', function(){
+    return em.remove().finally(function() {
+      return em.createOrMigrate();
+    }).then(function() {
+      var user = {
         nick: 'klesh',
         isAdmin: true,
         email: 'klesh@qq.com'
-      }).then(function() {
-        return db.find('User', {nick: 'klesh'});
+      };
+      return em.scope(function(db) {
+        return db.insert('User', user).then(function(user) {
+          return db.update('User', {email: '13794207@qq.com'}, {id: user.id});
+        }).then(function() {
+          return db.find('User', {id: user.id});
+        });
+      }).then(function(user) {
+        user.id.should.be.ok();
+        user.nick.should.be.exactly('klesh');
+        user.isAdmin.should.be.true();
+        user.email.should.be.exactly('13794207@qq.com');
       });
-    }).then(function(user) {
-      user.nick.should.be.exactly('klesh');
-      user.isAdmin.should.be.true();
-      user.email.should.be.exactly('klesh@qq.com');
     });
   });
 });

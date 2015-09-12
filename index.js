@@ -2,6 +2,9 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var normalizeDef = require('./lib/norm-definition.js');
+var Session = require('./lib/session.js');
+var Migrator = require('./lib/migrator.js');
+var Sql = require('./lib/sql-generator.js');
 
 function EmmoModel() {
   // initialize definition, add _Migration model to store model definition.
@@ -14,6 +17,13 @@ function EmmoModel() {
 }
 
 EmmoModel.prototype.init = function(options) {
+  if (!options) {
+    options = require(path.resolve('./em.json'));
+  }
+
+  if (options.modelsPath) options.modelsPath = path.resolve(options.modelsPath);
+  if (options.migartionPath) options.migrationsPath = path.resolve(options.migrationsPath);
+
   _.extend(this, {
     modelsPath: path.resolve('./models'),
     migrationsPath: path.resolve('./migrations'),
@@ -24,6 +34,8 @@ EmmoModel.prototype.init = function(options) {
 
   // load models
   fs.readdirSync(this.modelsPath).forEach(function(fileName) {
+    if (!/\.js$/.test(fileName))
+      return;
     require(path.resolve(this.modelsPath, fileName));
   }, this);
   
@@ -35,16 +47,26 @@ EmmoModel.prototype.init = function(options) {
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
+  var columnNames = [], updatableColumnNames = [], autoIncrementColumnName = '';
+  _.each(columns, function(colDef, colName) {
+    columnNames.push(colName);
+    if (colDef.autoIncrement)
+      autoIncrementColumnName = colName;
+    else
+      updatableColumnNames.push(colName);
+  });
   this.definition[name] = {
     columns: columns,
-    options: options,
-    columnNames: _.keys(columns)
+    options: options || {},
+    columnNames: columnNames,
+    updatableColumnNames: updatableColumnNames,
+    autoIncrementColumnName: autoIncrementColumnName
   };
 };
 
 EmmoModel.prototype.getInitialScript = function() {
   if (!this.initialScript) {
-    this.initialScript = this.agent.initialScript(this.normalized);
+    this.initialScript = Sql.initialScript(this.dialect, this.normalized);
   }
   return this.initialScript;
 };
@@ -62,31 +84,17 @@ EmmoModel.prototype.spawn = function(options) {
   ])));
 };
 
-/* if you need to connect different database base on request uri/host
- *    app.use(function(req, res, next) {
- *      var databaseName = req.query.site;
- *      em.getDatabaseName = function() {
- *        return databaseName;
- *      }
- *      next();
- *    });
- */
-EmmoModel.prototype.getDatabaseName = function() {
-  return this.database;
-};
-
-EmmoModel.prototype.connect = function(database) {
-  database = database === true ? this.agent.defaultDatabase : (database || this.getDatabaseName());
-  return this.agent.connect(util.format(this.connectionString, database))
-    .spread(function(connection, release) {
-      return new Database(this, connection, release);
-    });
-};
-
-EmmoModel.prototype.scope = function(job, database) {
-  return this.connect(database).then(function(db) {
-    return job(db).tap(db.release);
-  });
+EmmoModel.prototype.scope = function(arg1, arg2) {
+  var database, job, self = this;
+  if (_.isFunction(arg2)) {
+    job = arg2;
+    database = arg1;
+  } else {
+    job = arg1;
+    database = this.database;
+  }
+  var session = new Session(this, database);
+  return job(session).tap(session.close.bind(session));
 };
 
 EmmoModel.prototype.createOrMigrate = function() {
@@ -103,35 +111,35 @@ EmmoModel.prototype.createOrMigrate = function() {
 EmmoModel.prototype.create = function(database) {
   database = database || this.database;
   var self = this;
-  return this.scope(function(db) {
+  return this.scope(this.agent.defaultDatabase, function(db) {
     return db.query(self.agent.createDatabase(database));
-  }, true);
+  });
 };
 
 EmmoModel.prototype.remove = function(database) {
   database = database || this.database;
   var self = this;
-  return this.scope(function(db) {
+  return this.scope(this.agent.defaultDatabase, function(db) {
     return db.query(self.agent.dropDatabase(database));
-  }, true);
+  });
 };
 
 EmmoModel.prototype.initial = function(database) {
   var initialScript = this.getInitialScript();
   var migrator = this.getMigrator();
-  return this.scope(function(db) {
+  return this.scope(database, function(db) {
     return db.query(initialScript)
       .then(function() {
         return db.insert('_Migration', migrator.lastMigrationData());
       });
-  }, database);
+  });
 };
 
 EmmoModel.prototype.migrate = function(database) {
   var migrator = this.getMigrator();
-  return this.scope(function(db) {
+  return this.scope(database, function(db) {
     return migrator.run(db);
-  }, database);
+  });
 };
 
 EmmoModel.prototype.getMigrator = function() {
