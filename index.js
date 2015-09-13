@@ -19,11 +19,9 @@ function EmmoModel() {
 EmmoModel.prototype.init = function(options) {
   if (!options) {
     options = require(path.resolve('./em.json'));
+    if (options.modelsPath) options.modelsPath = path.resolve(options.modelsPath);
+    if (options.migrationsPath) options.migrationsPath = path.resolve(options.migrationsPath);
   }
-
-  if (options.modelsPath) options.modelsPath = path.resolve(options.modelsPath);
-  if (options.migartionPath) options.migrationsPath = path.resolve(options.migrationsPath);
-
   _.extend(this, {
     modelsPath: path.resolve('./models'),
     migrationsPath: path.resolve('./migrations'),
@@ -101,10 +99,10 @@ EmmoModel.prototype.createOrMigrate = function() {
   var self = this;
   return self.create(this.database)
     .then(function(){
-      return self.initial(self.database);
+      return self.initial(self.database).return(true);
     })
     .error(function() {
-      return self.migrate(self.database);
+      return self.migrate(self.database).return(false);
     });
 };
 

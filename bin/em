@@ -28,13 +28,13 @@ var commanders = {
       var lastModels = JSON.parse(lastMigration.models);
       var migrateScript = [
         Sql.migrateScript(config.dialect, lastModels, em.normalized),
-        util.format('INSERT INTO %s (%s) VALUES (%s)',
+        util.format('INSERT INTO %s (%s) VALUES (%s)' + em.agent.separator,
                    em.agent.quote('_Migrations'),
                    ['uid', 'name', 'models'].map(em.agent.quote).join(', '),
                    [uid, em.agent.escape(fullName), em.agent.escape(em.getNormalizedJson())].map(function(c){
                      return util.format("'%s'", c);
                    }))
-      ].map(function(sql) { return sql + em.agent.separator; }).join('\n');
+      ].join('\n');
 
       return fs.writeFile(path.resolve(em.migrationsPath, fullName), migrateScript, function() {
         console.log("Migration %s is created successfully.", fullName);
