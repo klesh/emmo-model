@@ -5,9 +5,11 @@ var normalizeDef = require('./lib/norm-definition.js');
 var Session = require('./lib/session.js');
 var Migrator = require('./lib/migrator.js');
 var Sql = require('./lib/sql-generator.js');
+var createModel = require('./lib/create-model.js');
 
 function EmmoModel() {
   // initialize definition, add _Migration model to store model definition.
+  this.models = {};
   this.definition = {};
   this.define('_Migration', {
     uid: { type: 'bigint', primaryKey: true, allowNull: false },
@@ -60,6 +62,8 @@ EmmoModel.prototype.define = function(name, columns, options) {
     updatableColumnNames: updatableColumnNames,
     autoIncrementColumnName: autoIncrementColumnName
   };
+  this.models[name] = createModel(this.definition[name]);
+  return this.models[name];
 };
 
 EmmoModel.prototype.getInitialScript = function() {
