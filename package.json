@@ -1,22 +1,22 @@
 {
   "name": "emmo-model",
   "version": "1.0.0",
-  "description": "Flexible lightweight ORM tool, supports migration, multiple shadow databases",
+  "description": "Flexible lightweight ORM tool, supports migration, multiple databases sharing sample models definition",
   "main": "index.js",
   "repository": "git@github.com:klesh/emmo-model.git",
   "scripts": {
     "test": "mocha test/*.js"
   },
   "keywords": [
+    "orm",
+    "database",
+    "postgressql",
     "model",
     "sql",
-    "generator",
-    "update",
-    "create",
-    "findOrCreate"
+    "multiple"
   ],
   "author": "Klesh Wong",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "bluebird": "^2.9.34",
     "i": "^0.3.3",
