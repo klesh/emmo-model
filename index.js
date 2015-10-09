@@ -96,10 +96,11 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
     database = this.database;
   }
   var session = new Session(this, database);
-  return job(session).tap(session.close.bind(session));
+  return job(session).finally(session.close.bind(session));
 };
 
 EmmoModel.prototype.createOrMigrate = function() {
+  if (!this.agent) this.init();
   var self = this;
   return self.create(this.database)
     .then(function(){
@@ -111,6 +112,7 @@ EmmoModel.prototype.createOrMigrate = function() {
 };
 
 EmmoModel.prototype.create = function(database) {
+  if (!this.agent) this.init();
   database = database || this.database;
   var self = this;
   return this.scope(this.agent.defaultDatabase, function(db) {
@@ -119,6 +121,7 @@ EmmoModel.prototype.create = function(database) {
 };
 
 EmmoModel.prototype.remove = function(database) {
+  if (!this.agent) this.init();
   database = database || this.database;
   var self = this;
   return this.scope(this.agent.defaultDatabase, function(db) {
@@ -127,6 +130,7 @@ EmmoModel.prototype.remove = function(database) {
 };
 
 EmmoModel.prototype.initial = function(database) {
+  if (!this.agent) this.init();
   var initialScript = this.getInitialScript();
   var migrator = this.getMigrator();
   return this.scope(database, function(db) {

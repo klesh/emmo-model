@@ -23,6 +23,7 @@ module.exports = {
   },
   // convert query result into plain object/array
   result: function(result) {
+    result.rows.affectedRows = result.rowCount;
     return result.rows;
   },
   // quote resource name,
@@ -171,7 +172,13 @@ module.exports = {
     return util.format('ALTER TABLE %s ALTER COLUMN %s %s',
                       this.quote(tableName),
                       this.quote(columnName),
-                      columnDef.defaultValue === null || columnDef.defaultValue === undefined ? 'DROP DEFAULT' : 'SET DEFAULT ' + columnDef.defaultValue);
+                      columnDef.defaultValue === null || columnDef.defaultValue === undefined ? 'DROP DEFAULT' : 'SET DEFAULT ' + columnDef.defaultValue) + this.separator;
+  },
+  changeAllowNull: function(tableName, columnName, columnDef) {
+    return util.format('ALTER TABLE %s ALTER COLUMN %s',
+                      this.quote(tableName),
+                      this.quote(columnName),
+                      columnDef.allowNull ? 'DROP NOT NULL' : 'SET NOT NULL') + this.separator;
   },
   createPrimaryKeys: function(tableName, primaryKeysInfo) {
     return util.format('ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)',

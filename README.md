@@ -113,7 +113,7 @@ Create and initial database if it doesn't exists
 ```js
 em.createOrMigrate().then(function(isCreate) {
   if (isCreate) {
-    em.scope(function(session) {
+    return em.scope(function(session) {
       // to insert initial data, like admin user..
     })
   }
@@ -153,6 +153,14 @@ Useful when you working with different data server.
 
 ## Session
 Represent a database connection, to perform database CRUD operations.
+
+### About where
+```
+{ name: 'Klesh', createdAt: null } // to sql: "name = 'Klesh' AND createdAt IS NULL"
+{ age: [ '<', 20 ], roleId: ['!=', 3] } // to sql: "age < 20 AND roleId <> 3"
+{ createdAt: [ '<>', null ] } // to sql: "createdAt IS NOT NULL"
+```
+
 
 ### find(modelName, where)
 Shorthand to selectOne which _where_ indicates one row only.
