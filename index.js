@@ -29,7 +29,8 @@ EmmoModel.prototype.init = function(options) {
     migrationsPath: path.resolve('./migrations'),
     dialect: 'pg',
     connectionString: '',
-    database: ''
+    database: '',
+    autoTrim: true
   }, options);
 
   // load models
@@ -62,7 +63,7 @@ EmmoModel.prototype.define = function(name, columns, options) {
     updatableColumnNames: updatableColumnNames,
     autoIncrementColumnName: autoIncrementColumnName
   };
-  this.models[name] = createModel(this.definition[name]);
+  this.models[name] = createModel(this, this.definition[name]);
   return this.models[name];
 };
 
@@ -82,7 +83,7 @@ EmmoModel.prototype.getNormalizedJson = function() {
 
 EmmoModel.prototype.spawn = function(options) {
   return new EmmoModel(_.defaults(options, _.pick(this, [
-    "modelsPath", "migrationsPath", "database", "definition", "normalized"
+    "modelsPath", "migrationsPath", "database", "definition", "normalized", "autoTrim"
   ])));
 };
 

@@ -32,6 +32,7 @@ module.exports = em.define('User', {
   lastName: { type: 'string', length: 50 },
   roleId: { type: 'int', refer: 'Role', onDelete: 'CASCADE' }
   remark: { type: 'string' }, // text
+  email: { type: 'string', email: true, message: 'Please enter valid email' }
   createdAt: { type: 'timestamptz', defaultValue: 'now()' } // timestamptz
 }, {
   getFullName: function() {
@@ -53,7 +54,23 @@ module.exports = em.define('Role', {
 modify myproject/bin/www to bootstrap emmo-model before server start.
 ```js
 var em = require('emmo-model');
-em.createOrMigrate().then(function() {
+em.init({ // will load from ./em.json if you invoke init() directly
+  "modelsPath": "models",  // path of folder which contains all model definition files.
+  "migrationsPath": "migrations",  // path of folder which contains all database migration sql files.
+  "dialect": "pg", // dialect, current only postgres is available
+  "connectionString": "/var/run/postgresql %s",  // leave %s as database name placehold, since em supports multiple databases sharing same structure.
+  "database": "emtest", // a default database to develop on, to generate migration script. All spawn database will be exactly same as this one.
+  "autoTrim": true, // trim string type value during validation automatically.
+  "timestampFormat": "YYYY-MM-DD HH:mm:ss", // this will be passed to moment() directly, please check moment doc for detail.
+  "dateFormat": "YYYY-MM-DD",
+  "timeFormat": "HH:mm:ss"
+})
+em.createOrMigrate().then(function(isInitial) {
+  if (isInitial) {
+    em.scope(function(db) {
+      return db.insert('User', { account: 'admin', password: 'hi' }); // insert a default admin user.
+    })
+  }
   server.listen(4000);
 });
 ```
@@ -237,6 +254,20 @@ em.scope(function(db) {
   console.log(affectedRows); // 3
 })
 
+```
+
+## Model
+em.define will return a Model constructor, which can be use to instantiate new instance, and run validation.
+```js
+var User = em.define('User', { ... });
+var user = new User({ nick: 'Klesh', roleId: 2 });
+user.validate().then(function() {
+  console.log('user is valid');
+}).error(function(err) {
+  console.log('user is invalid, %s, %s', err.propertyName, err.description);
+})
+var result = user.validate();
+if (result instanceof Error)
 ```
 
 ## Migration
