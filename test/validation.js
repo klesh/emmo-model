@@ -14,7 +14,7 @@ describe('Validation test', function() {
   });
 
   function shouldNotCall() {
-    throw new Error('Success event should not be trigged.');
+    should.fail();
   }
 
   function shouldError(err) {
@@ -23,8 +23,8 @@ describe('Validation test', function() {
 
   function shouldPropertyError(err) {
     shouldError(err);
-    err.propertyName.should.be.exactly('nick');
-    err.description.should.be.ok();
+    should(err.propertyName).be.ok();
+    should(err.description).be.ok();
     err.message.should.be.exactly(err.description);
   }
 
@@ -76,6 +76,22 @@ describe('Validation test', function() {
     return user1.validate().then(function() {
       user1.createdAt._isAMomentObject.should.be.true();
     });
+  });
 
+  it('isEmail', function() {
+    var User = em.define('User', {
+      email: { type: 'string', length: 50, isEmail: true, message: 'Please enter valid email address' }
+    });
+    
+    var user = new User({ email: 'notaemail' });
+    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
+  });
+
+  it('matches', function() {
+    var User = em.define('User', {
+      nick: { type: 'string', length: 50, matches: /^\w{5,8}$/, message: 'Nick should be consist by 5~8 letters' }
+    });
+    var user = new User({ nick: 'abcdefghijkl,n' });
+    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
   });
 });
