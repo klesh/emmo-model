@@ -1,5 +1,6 @@
 var em = require('../index.js');
 var should = require('should');
+var shouldPromised = require('should-promised');
 var path = require('path');
 
 describe('Validation test', function() {
@@ -13,30 +14,12 @@ describe('Validation test', function() {
     });
   });
 
-  function shouldNotCall() {
-    should.fail();
-  }
-
-  function shouldError(err) {
-    err.should.be.ok();
-  }
-
-  function shouldPropertyError(err) {
-    shouldError(err);
-    should(err.propertyName).be.ok();
-    should(err.description).be.ok();
-    err.message.should.be.exactly(err.description);
-  }
-
   it('message', function() {
     var User = em.define('User', {
       nick: { type: 'string', allowNull: false, message: 'Please enter nick' }
     });
 
-    return new User().validate().then(shouldNotCall).catch(function(err) {
-      shouldPropertyError(err);
-      err.description.should.be.exactly(User.prototype._definition.columns.nick.message);
-    });
+    return new User().validate().should.be.rejected();
   });
 
   it('allowNull', function() {
@@ -45,7 +28,7 @@ describe('Validation test', function() {
     });
 
     var user = new User({ nick: '' });
-    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
+    return user.validate().should.be.rejectedWith({ propertyName: 'nick' });
   });
   
   it('length', function() {
@@ -54,7 +37,7 @@ describe('Validation test', function() {
     });
 
     var user = new User({ nick: 'a very long nick' });
-    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
+    return user.validate().should.be.rejectedWith({ propertyName: 'nick' });
   });
 
   it('number type', function() {
@@ -63,7 +46,7 @@ describe('Validation test', function() {
     });
 
     var user = new User({ age: 'fifty' });
-    return user.validate().then(shouldNotCall).catch(shouldError);
+    return user.validate().should.be.rejected();
   });
 
   it('timestamp type', function() {
@@ -79,12 +62,13 @@ describe('Validation test', function() {
   });
 
   it('isEmail', function() {
+    var message = 'Please enter valid email address' ;
     var User = em.define('User', {
-      email: { type: 'string', length: 50, isEmail: true, message: 'Please enter valid email address' }
+      email: { type: 'string', length: 50, isEmail: true, message: message}
     });
     
     var user = new User({ email: 'notaemail' });
-    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
+    return user.validate().should.be.rejectedWith({ propertyName: 'email', message: message });
   });
 
   it('matches', function() {
@@ -92,6 +76,27 @@ describe('Validation test', function() {
       nick: { type: 'string', length: 50, matches: /^\w{5,8}$/, message: 'Nick should be consist by 5~8 letters' }
     });
     var user = new User({ nick: 'abcdefghijkl,n' });
-    return user.validate().then(shouldNotCall).catch(shouldPropertyError);
+    return user.validate().should.be.rejectedWith({ propertyName: 'nick' });
+  });
+
+  it('update validation by autoIncrement column', function() {
+    var User = em.define('User', {
+      id: { type: 'int', autoIncrement: true, primaryKey: true },
+      nick: { type: 'string', length: 50, allowNull: false },
+      lastLogonAt: { type: 'timestamptz' }
+    });
+
+    var user = new User({ id: 100, lastLogonAt: new Date() });
+    return user.validate().should.be.fulfilled();
+  });
+
+  it('update validation by passing true', function() {
+    var User = em.define('User', {
+      nick: { type: 'string', length: 50, allowNull: false, primaryKey: true },
+      lastLogonAt: { type: 'timestamptz' }
+    });
+
+    var user = new User({ nick: 'someone', lastLogonAt: new Date() });
+    return user.validate(true).should.be.fulfilled();
   });
 });
