@@ -48,22 +48,25 @@ EmmoModel.prototype.init = function(options) {
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
-  var columnNames = [], updatableColumnNames = [], autoIncrementColumnName = '';
+  var columnNames = [], updatableColumnNames = [], primaryKeys = [], autoIncrementColumnName = '';
   _.each(columns, function(colDef, colName) {
     columnNames.push(colName);
     if (colDef.autoIncrement)
       autoIncrementColumnName = colName;
     else
       updatableColumnNames.push(colName);
+    if (colDef.primaryKey)
+      primaryKeys.push(colName);
   });
   this.definition[name] = {
     columns: columns,
     options: options || {},
     columnNames: columnNames,
     updatableColumnNames: updatableColumnNames,
+    primaryKeys: primaryKeys,
     autoIncrementColumnName: autoIncrementColumnName
   };
-  this.models[name] = createModel(this, this.definition[name]);
+  this.models[name] = createModel(this, name, this.definition[name]);
   return this.models[name];
 };
 

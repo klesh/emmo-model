@@ -77,12 +77,14 @@ em.createOrMigrate().then(function(isInitial) {
 
 ### CRUD
 myproject/routes/index.js
+
+For multiple databases:
 ```js
 var em = require('emmo-model');
 var _ = require('lodash');
 
 route.get('/', function(req, res) {
-  em.scope(function(db) {
+  em.scope('db1', function(db) {
     return db.select('User', { 
       where: { RoleId: [ '<', 100 ] }, 
       order: { id : 'DESC' },
@@ -95,7 +97,7 @@ route.get('/', function(req, res) {
 });
 
 route.post('/', function(req, res) {
-  em.scope(function(db) {
+  em.scope('db1', function(db) {
     return db.insert('User', req.body);
   }).then(function(user) {
     res.json({ insertedId: user.id });
@@ -103,7 +105,7 @@ route.post('/', function(req, res) {
 });
 
 route.put('/:id', function(req, res) {
-  em.scope(function(db) {
+  em.scope('db1', function(db) {
     return db.update('User', req.body);
   }).then(function(affectedRows) {
     res.json({ updatedFields: _.keys(req.body) });
@@ -111,12 +113,23 @@ route.put('/:id', function(req, res) {
 });
 
 route.delete('/:id', function(req, res) {
-  em.scope(function(db) {
+  em.scope('db1', function(db) {
     return db.delete('User', { id: req.params.id });
   }).then(function(affectedRows) {
     res.json({ affectedRows: affectedRows });
   });
 });
+```
+
+For single database:
+```js
+var User = require('../models/user.js');
+
+route.get('/', function(req, res) {
+  User.getAll().then(function (users) {
+    res.json(user);
+  });
+})
 ```
 
 ## EmmoModel
