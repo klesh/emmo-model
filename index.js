@@ -115,6 +115,16 @@ EmmoModel.prototype.createOrMigrate = function() {
     });
 };
 
+EmmoModel.prototype.dropCreate = function() {
+  if (!this.agent) this.init();
+  var self = this;
+  return self.remove(self.database).finally(function() {
+    return self.create(self.database);
+  }).then(function() {
+    return self.initial(self.database);
+  });
+};
+
 EmmoModel.prototype.create = function(database) {
   if (!this.agent) this.init();
   database = database || this.database;
