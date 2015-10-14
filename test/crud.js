@@ -2,7 +2,10 @@ var path = require('path');
 var em = require('../index.js');
 var should = require('should');
 var User = require('./models/user.js');
+var Role = require('./models/role.js');
 var Department = require('./models/department.js');
+var Promise2 = require('bluebird');
+var _ = require('lodash');
 
 em.init({
   modelsPath: path.resolve(__dirname, 'models'),
@@ -77,5 +80,33 @@ describe('Single database mode', function() {
     }).then(function(user) {
       should(user.nick).be.exactly('ctest2');
     });
+  });
+
+  it('all/paginate', function() {
+    return Promise2.each([
+        { name: 'Role1' },
+        { name: 'Role2' },
+        { name: 'Role3' },
+        { name: 'Role4' },
+        { name: 'Role5' },
+        { name: 'Role6' }
+      ], 
+      function(role) {
+        return Role.insert(role);
+      }).then(function() {
+        return Role.all();
+      }).then(function(all) {
+        should(all.length).be.exactly(6);
+        return Role.paginate({ size:2, page:1, field: [ 'id', 'name'] });
+      }).then(function(page1) {
+        should(page1.length).be.exactly(2);
+        should(page1[0].name).be.exactly('Role6');
+        should(page1[1].name).be.exactly('Role5');
+        should(_.keys(page1[0]).length).be.exactly(2);
+        return Role.paginate({ size:2, page:3, field: [ 'id', 'name' ] });
+      }).then(function(page3) {
+        should(page3[0].name).be.exactly('Role2');
+        should(page3[1].name).be.exactly('Role1');
+      });
   });
 });
