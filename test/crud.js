@@ -121,9 +121,45 @@ describe('Single database mode', function() {
   });
 
   it('count', function() {
-    return User.scalar({ field: em.count('age') })
+    return User.scalar({ field: em.count() })
     .then(function(total) {
       should(total * 1).be.Number();
+    });
+  });
+  
+  it('avg', function() {
+    return em.scope(function(db) {
+      return Promise2.each([1, 2, 3, 4], function(age) {
+        return db.insert('User', { nick: 'avgtest' + age, age: age });
+      }).then(function() {
+        return db.scalar('User', { field: db.avg('age') });
+      });
+    }).then(function(avg) {
+      should(avg * 1).be.exactly(2.5);
+    });
+  });
+
+  it('groupby having', function() {
+    var deptId;
+    return em.scope(function(db) {
+      return db.insert('Department', { title: 'grouptest' })
+      .then(function(dept) {
+        deptId = dept.id;
+        return Promise2.each([1, 2, 3, 4], function(i) {
+          return db.insert('User', { nick: 'ghtest' + i, departmentId: dept.id });
+        });
+      })
+      .then(function(){
+        return db.scalar('User', { 
+          field: 'departmentId',
+          groupby: 'departmentId',
+          having: {
+            5: [ '>', db.count() ]
+          }
+        });
+      });
+    }).then(function(rs) {
+      should(rs).be.exactly(deptId);
     });
   });
 });

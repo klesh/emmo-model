@@ -246,7 +246,7 @@ module.exports = {
       if (!isNaN(np1))
         return util.format('COUNT(%d)', np1);
 
-      if (p1 + '')
+      if (p1)
         return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', this.quote(p1));
 
       return 'COUNT(*)';

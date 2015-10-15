@@ -32,7 +32,7 @@ module.exports = em.define('User', {
   lastName: { type: 'string', length: 50 },
   roleId: { type: 'int', refer: 'Role', onDelete: 'CASCADE' }
   remark: { type: 'string' }, // text
-  email: { type: 'string', email: true, message: 'Please enter valid email' }
+  email: { type: 'string', isEmail: true, message: 'Please enter valid email' }
   createdAt: { type: 'timestamptz', defaultValue: 'now()' } // timestamptz
 }, {
   getFullName: function() {
@@ -82,14 +82,16 @@ For multiple databases:
 ```js
 var em = require('emmo-model');
 var _ = require('lodash');
+var User = require('../models/user.js');
 
 route.get('/', function(req, res) {
   em.scope('db1', function(db) {
     return db.select('User', { 
-      where: { RoleId: [ '<', 100 ] }, 
+      field: [ 'id', 'nick', 'age' ],
+      where: { departmentId: [ '<', 100 ] }, 
       order: { id : 'DESC' },
-      skip: 100,
-      limit: 10
+      size: 20,
+      page: req.query.page
     })
   }).then(function(users) {
     res.json(users);
@@ -119,6 +121,18 @@ route.delete('/:id', function(req, res) {
     res.json({ affectedRows: affectedRows });
   });
 });
+
+route.post('/', function(req, res) {
+  User.validate(req.body).then(function() {
+    return em.scope(function(db) {
+      return db.save('User', req.body);
+    }).then(function() {
+      res.json({ success: true });
+    }).catch(function(err) {
+      res.json({ success: false, error: err });
+    });
+  });
+});
 ```
 
 For single database:
@@ -126,7 +140,7 @@ For single database:
 var User = require('../models/user.js');
 
 route.get('/', function(req, res) {
-  User.getAll().then(function (users) {
+  User.all().then(function (users) {
     res.json(user);
   });
 })
@@ -183,14 +197,6 @@ Useful when you working with different data server.
 
 ## Session
 Represent a database connection, to perform database CRUD operations.
-
-### About where
-```
-{ name: 'Klesh', createdAt: null } // to sql: "name = 'Klesh' AND createdAt IS NULL"
-{ age: [ '<', 20 ], roleId: ['!=', 3] } // to sql: "age < 20 AND roleId <> 3"
-{ createdAt: [ '<>', null ] } // to sql: "createdAt IS NOT NULL"
-```
-
 
 ### find(modelName, where)
 Shorthand to selectOne which _where_ indicates one row only.
@@ -268,6 +274,49 @@ em.scope(function(db) {
 })
 
 ```
+### Options reference
+
+#### field
+String: pass a string indicates to select a single column
+Object: pass a Plain Object indicates to select columns as Alias (key as alias, value as column)
+Array: pass a array indicates to select multiple columns
+```js
+User.select({ field: 'nick', where: { id: 1 } });
+User.select({ field: [ 'id', 'nick' ] });
+User.select({ field: { name: 'nick' } });
+User.select({ field: [ 'id', { name: 'nick' } ] });
+User.select({ field: { totalAge: em.sum('age'), avgAge: em.avg('age') } });
+```
+
+#### where
+Object: pass a Object indicates an AND situation
+```js
+User.scalar({ field: em.count(), where: { age: [ '>', 20 ], departmentId: 1 } });
+User.scalar({ field: em.avg('age'), where: { id: [ 'in', [1, 2, 3] ] } });
+```
+
+#### order
+String: pass a string indicates to order by single column in ASC
+Object: pass a Plain Object indicats to order by multiple columns
+Array: pass a Array of String indicates to order by multiple columns in ASC
+```js
+User.select({ where: { departmentId: 1 }, order: 'id' });
+User.select({ where: { departmentId: 1 }, order: { id: 'DESC', nick: 'ASC' } });
+User.select({ where: { departmentId: 1 }, order: [ 'id', 'nick' ] });
+```
+
+#### offset
+Number
+
+#### limit
+Number
+
+#### groupby
+String: group by single column
+
+#### having
+Object: same as where parameter
+
 
 ## Model
 em.define will return a Model constructor, which can be use to instantiate new instance, and run validation.
@@ -282,6 +331,26 @@ user.validate().then(function() {
 var result = user.validate();
 if (result instanceof Error)
 ```
+Model contains has all Session operation as shortcut to default database, so you can do like:
+```js
+User.find({ id: 1 });
+User.select({ field: ['id', 'nick'] });
+User...
+```
+### validate(forceUpdate) --> Promise
+Run validation on current instance.
+If Model have a autoIncrement column, this will run FULL or OWN PROPERTIES ONLY base on autoIncrement property's value. or you can pass forceUpdate as TRUE to force OWN PROPERTIES ONLY validation.
+
+
+### validateProperty(propertyName) --> Promise
+Run specify property validation on current instance.
+
+### validateValue(propertyName, propertyValue) --> Promise
+Run specify propertyName/propertyValue on current instance. Useful when you apply EDIT IN PLACE pattern.
+
+### all/insert/update/delete/select/selectOne/find/scalar etc... --> Promise
+Shortcuts to Session operations connect to DEFAULT DATABASE
+
 
 ## Migration
 
