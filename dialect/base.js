@@ -30,6 +30,11 @@ module.exports = {
   quote: function(name) {
     return name;
   },
+  quoteString: function(text) {
+    if (text === null || text === undefined) return 'NULL';
+    if (text === '') return '';
+    return util.format("'%s'", text.replace(/'/g, "''"));
+  },
   // escape text constant
   escape: function(text) {
     return text.replace(/'/g, "''");
@@ -232,5 +237,60 @@ module.exports = {
     return util.format('ALTER TABLE %s DROP CONSTRAINT %s',
                       this.quote(tableName),
                       this.quote(name)) + this.separator;
+  },
+  // all functions will be attached to DbFunc prototype
+  functions: {
+    count: function(p1, distinct) {
+
+      var np1 = p1 * 1;
+      if (!isNaN(np1))
+        return util.format('COUNT(%d)', np1);
+
+      if (p1 + '')
+        return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', this.quote(p1));
+
+      return 'COUNT(*)';
+    },
+    avg: function(p1) {
+      return util.format('AVG(%s)', this.quote(p1));
+    },
+    first: function(p1) {
+      return util.format('FIRST(%s)', this.quote(p1));
+    },
+    last: function(p1) {
+      return util.format('LAST(%s)', this.quote(p1));
+    },
+    max: function(p1) {
+      return util.format('MAX(%s)', this.quote(p1));
+    },
+    min: function(p1) {
+      return util.format('MIN(%s)', this.quote(p1));
+    },
+    sum: function(p1) {
+      return util.format('SUM(%s)', this.quote(p1));
+    },
+    ucase: function(p1) {
+      return util.format('UCASE(%s)', this.quote(p1));
+    },
+    lcase: function(p1) {
+      return util.format('LCASE(%s)', this.quote(p1));
+    },
+    mid: function(p1, p2, p3) {
+      return util.format(p3 ? "MID(%s, %d, %d)" : "MID(%s, %d)", this.quote(p1), p2, p3);
+    },
+    len: function(p1) {
+      return util.format('LEN(%s)', this.quote(p1));
+    },
+    round: function(p1, p2) {
+      return util.format('ROUND(%s, %d)', this.quote(p1), p2);
+    },
+    now: function() {
+      return 'NOW()';
+    },
+    format: function(p1, p2) {
+      return util.format('FORMAT(%s, %s)', this.quote(p1), this.quoteString(p2));
+    }
   }
 };
+     // if (!this.hasColumn(p1))
+     //   throw new Error(util.format("column %s does't exists"));

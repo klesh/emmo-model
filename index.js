@@ -1,11 +1,13 @@
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
 var _ = require('lodash');
 var normalizeDef = require('./lib/norm-definition.js');
 var Session = require('./lib/session.js');
 var Migrator = require('./lib/migrator.js');
 var Sql = require('./lib/sql-generator.js');
 var createModel = require('./lib/create-model.js');
+var Expression = require('./lib/expression.js');
 
 function EmmoModel() {
   // initialize definition, add _Migration model to store model definition.
@@ -45,6 +47,30 @@ EmmoModel.prototype.init = function(options) {
 
   // load dialect
   this.agent = require('./dialect/' + this.dialect + '.js');
+
+  // initialize dialectized Session which contains database function support
+  if (!this.agent._Session) {
+    var _Session = function() {
+      Session.apply(this, arguments);
+    };
+
+    util.inherits(_Session, Session);
+
+    var self = this;
+    _.extend(_Session.prototype, this.agent.functions, function(p, f, k) {
+      var x = function() {
+        return new Expression(f.apply(_Session.prototype, arguments));
+      };
+      self[k] = x; 
+      return x;
+    });
+    
+    _Session.prototype.quote = this.agent.quote;
+    _Session.prototype.quoteString = this.agent.quoteString;
+
+    this.agent._Session = _Session;
+  }
+  this.Session = this.agent._Session;
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
@@ -99,7 +125,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
     job = arg1;
     database = this.database;
   }
-  var session = new Session(this, database);
+  var session = new this.Session(this, database);
   return job(session).finally(session.close.bind(session));
 };
 

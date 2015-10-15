@@ -109,4 +109,21 @@ describe('Single database mode', function() {
         should(page3[1].name).be.exactly('Role1');
       });
   });
+
+  it('alias', function() {
+    return User.insert({ nick: 'aliastest' })
+      .then(function(user) {
+        return User.selectOne({ field: { name: 'nick' }, where: { id: user.id } });
+      })
+      .then(function(user) {
+        should(user.name).be.exactly('aliastest');
+      });
+  });
+
+  it('count', function() {
+    return User.scalar({ field: em.count('age') })
+    .then(function(total) {
+      should(total * 1).be.Number();
+    });
+  });
 });

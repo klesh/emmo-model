@@ -1,12 +1,12 @@
 var _ = require('lodash');
 var base = require('./base.js');
 var pg = require('pg');
-var Promise = require('bluebird');
+var Promise2 = require('bluebird');
 var util = require('util');
 
-Promise.promisifyAll(pg);
+Promise2.promisifyAll(pg);
 
-_.extend(module.exports, base, {
+_.merge(module.exports, base, {
   defaultDatabase: 'postgres',
   placehold: function(index) {
     return '$' + (index * 1 + 1);
