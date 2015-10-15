@@ -86,7 +86,7 @@ var User = require('../models/user.js');
 
 route.get('/', function(req, res) {
   em.scope('db1', function(db) {
-    return db.select('User', { 
+    return db.paginate('User', { 
       field: [ 'id', 'nick', 'age' ],
       where: { departmentId: [ '<', 100 ] }, 
       order: { id : 'DESC' },
