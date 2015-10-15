@@ -90,8 +90,8 @@ route.get('/', function(req, res) {
       field: [ 'id', 'nick', 'age' ],
       where: { departmentId: [ '<', 100 ] }, 
       order: { id : 'DESC' },
-      size: 20,
-      page: req.query.page
+      limit: 20,
+      offset: (req.query.page) - 1 * 20
     })
   }).then(function(users) {
     res.json(users);
@@ -217,6 +217,9 @@ em.scope(function(db) {
   console.log(users);
 })
 ```
+
+### paginate(modelName, options)
+Similar to select but accept size/page an convert to offset/limit
 
 ### selectOne(modelName, options)
 Return only the first row.
