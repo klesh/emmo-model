@@ -1,23 +1,48 @@
+var fs = require('fs');
 var path = require('path');
 var em = require('../index.js');
+var Promise2 = require('bluebird');
+var _ = require('lodash');
 var should = require('should');
 var User = require('./models/user.js');
 var Role = require('./models/role.js');
 var Department = require('./models/department.js');
-var Promise2 = require('bluebird');
-var _ = require('lodash');
 
-em.init({
-  modelsPath: path.resolve(__dirname, 'models'),
-  migrationsPath: path.resolve(__dirname, 'migrations'),
-  dialect: 'pg',
-  connectionString: '/var/run/postgresql %s',
-  database: 'emtest'
-});
+var jsonPath = path.resolve('./em.json');
+var database;
 
-describe('Single database mode', function() {
-  before('init database', function() {
-    return em.dropCreate();
+describe('EmmoModel', function() {
+  before('all', function() {
+    this.timeout(10 * 1000);
+    var json = require('../tpl/em.json');
+    json.modelsPath = 'test/models';
+    json.migrationsPath = 'test/migrations';
+    fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2));
+    database = json.database;
+    if (!database) throw new Error('database can not be error in tpl/em.json');
+    em.init();
+    return Promise2.all(_.map([ database, 'emtest1' ], function(name) {
+      return em.remove(name);
+    })).finally(function() {
+      return em.sync();
+    });
+  });
+
+  function readJson() {
+    return JSON.parse(fs.readFileSync(jsonPath).toString());
+  }
+
+  it('sync', function() {
+    this.timeout(10 * 1000);
+    return em.sync(function(name, isNew) {
+      should(name).be.exactly(database);
+      should(isNew).be.true();
+    }).then(function() {
+      should(readJson().all).be.deepEqual([ database ]);
+      return em.create('emtest1');
+    }).then(function() {
+      should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
+    });
   });
 
   it('insert/select/update/delete', function() {

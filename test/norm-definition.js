@@ -13,10 +13,7 @@ if (require.main == module) {
     it('convert user definition to standard format', function() {
       var output = normDef(input);
       var expected = require('./case-norm-definition/output.json');
-
-      var outputJson = JSON.stringify(output);
-      var expectedJson = JSON.stringify(expected);
-      outputJson.should.be.exactly(expectedJson);
+      should(output).be.deepEqual(expected);
     });
   });
 }

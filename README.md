@@ -54,22 +54,11 @@ module.exports = em.define('Role', {
 modify myproject/bin/www to bootstrap emmo-model before server start.
 ```js
 var em = require('emmo-model');
-em.init({ // will load from ./em.json if you invoke init() directly
-  "modelsPath": "models",  // path of folder which contains all model definition files.
-  "migrationsPath": "migrations",  // path of folder which contains all database migration sql files.
-  "dialect": "pg", // dialect, current only postgres is available
-  "connectionString": "/var/run/postgresql %s",  // leave %s as database name placehold, since em supports multiple databases sharing same structure.
-  "database": "emtest", // a default database to develop on, to generate migration script. All spawn database will be exactly same as this one.
-  "autoTrim": true, // trim string type value during validation automatically.
-  "timestampFormat": "YYYY-MM-DD HH:mm:ss", // this will be passed to moment() directly, please check moment doc for detail.
-  "dateFormat": "YYYY-MM-DD",
-  "timeFormat": "HH:mm:ss"
-})
-em.createOrMigrate().then(function(isInitial) {
-  if (isInitial) {
-    em.scope(function(db) {
-      return db.insert('User', { account: 'admin', password: 'hi' }); // insert a default admin user.
-    })
+var User = require('../models/user.js');
+
+em.sync(function(databaseName, isNew) {
+  if (isNew) { // to insert initial data;
+    User.insert({ account: 'admin', password: 'hi' });
   }
   server.listen(4000);
 });
@@ -86,7 +75,7 @@ var User = require('../models/user.js');
 
 route.get('/', function(req, res) {
   em.scope('db1', function(db) {
-    return db.paginate('User', { 
+    return db.select('User', { 
       field: [ 'id', 'nick', 'age' ],
       where: { departmentId: [ '<', 100 ] }, 
       order: { id : 'DESC' },
@@ -134,6 +123,16 @@ route.post('/', function(req, res) {
   });
 });
 ```
+Or use shortcuts:
+```js
+var User = require('../models/user.js');
+
+route.get('/', function(req, res) {
+  User.allIn(req.params.database).then(function(users) {
+    res.json(user);
+  });
+})
+```
 
 For single database:
 ```js
@@ -152,15 +151,18 @@ A EmmoModel instance represent a set of Models. The major difference to other or
 ### define(modelName, columnsDef, methodsDef) -> constructor
 Define a new Model
 
-### createOrMigrate() -> Promise
+### sync([databaseNames|callback]) -> Promise
+Ommited: (KEEP ALL DATABASES UP TO DAY) create or migrate all databases in em.json file;
+String: create or migrate single database;
+Array: create or migrate a set of databases;
+Function: will be call when database is created or migrated, two arguments will be pass to it, first one is database name, second one is a bool indicate if database is brand new instead of migrated.
+
 Create and initial database if it doesn't exists
 ```js
-em.createOrMigrate().then(function(isCreate) {
-  if (isCreate) {
-    return em.scope(function(session) {
-      // to insert initial data, like admin user..
-    })
-  }
+em.sync(function(name, isNew) {
+    if (isNew) {
+        
+    }
 })
 ```
 
@@ -180,13 +182,16 @@ em.scope(function(session) {
 ```
 
 ### create(databaseName) -> Promise
-Create an empty database.
+Create and initial database.
 
 ### remove(databaseName) -> Promise
 Remove database.
 
 ### initial(databaseName) -> Promise
 Run initial sql script on database to build up tables/indexes/foreignkeys according to Models definition.
+
+### saveChange(isCreated, databaseName)
+Add/Remove database in em.json file
 
 ### migrate(databaseName) -> Promise
 Run pending migrations, executed migrations will be ignored.
@@ -277,6 +282,20 @@ em.scope(function(db) {
 })
 
 ```
+
+### save(modelName, data, [forceUpdate])
+Validate and Insert/Update row base on AutoIncrement column's value if forceUpdate is omitted
+```js
+User.save({ nick: 'newUser' }); //insert
+User.save({ lastLogonAt: moment(), id: 2 }); //update
+```
+
+### cell(modelName, columnName, cellValue, pkvalue)
+Validate and Update a specific cell, useful when you apply EDIT IN PLACE pattern.
+```js
+User.cell('nick', 'NEWNICK', 2);
+```
+
 ### Options reference
 
 #### field
@@ -322,7 +341,7 @@ Object: same as where parameter
 
 
 ## Model
-em.define will return a Model constructor, which can be use to instantiate new instance, and run validation.
+em.define will return a Model constructor, which can be use to instantiate new instance, run validation and save to database.
 ```js
 var User = em.define('User', { ... });
 var user = new User({ nick: 'Klesh', roleId: 2 });
@@ -331,8 +350,6 @@ user.validate().then(function() {
 }).error(function(err) {
   console.log('user is invalid, %s, %s', err.propertyName, err.description);
 })
-var result = user.validate();
-if (result instanceof Error)
 ```
 Model contains has all Session operation as shortcut to default database, so you can do like:
 ```js
@@ -340,20 +357,99 @@ User.find({ id: 1 });
 User.select({ field: ['id', 'nick'] });
 User...
 ```
-### validate(forceUpdate) --> Promise
-Run validation on current instance.
-If Model have a autoIncrement column, this will run FULL or OWN PROPERTIES ONLY base on autoIncrement property's value. or you can pass forceUpdate as TRUE to force OWN PROPERTIES ONLY validation.
+or in other database:
+```js
+User.findIn('other_database_name', { id: 1 })
+User.selectIn('other_database', { field: [ 'id', 'nick' ] })
+```
 
+### Static Methods
 
-### validateProperty(propertyName) --> Promise
-Run specify property validation on current instance.
+#### saveIn(database, data, [forceUpdate]) --> Promise
+Run validation and then trigger beforeUpdate/beforeInsert event, and then insert/update to specified DATABASE
+Return a rejected promise in event listener can stop data being saved
+afterUpdate/afterInsert will be triggered if successful
 
-### validateValue(propertyName, propertyValue) --> Promise
-Run specify propertyName/propertyValue on current instance. Useful when you apply EDIT IN PLACE pattern.
+#### save(data, [forceUpdate]) --> Promise
+Shortcut to DEFAULT DATABASE of saveIn
 
-### all/insert/update/delete/select/selectOne/find/scalar etc... --> Promise
+#### cellIn(database, field, value, pkvalue) --> Promise
+Run validation and then trigger beforeCell event, and then Update specific cell's value in database, 
+Return a rejected promise in event listener can stop data being saved
+afterCell will be triggered if successful
+
+#### cell(field, value, pkvalue) --> Promise
+Shortcut to DEFAULT DATABASE of cellIn
+
+#### allIn/insertIn/updateIn/deleteIn/selectIn/selectOneIn/findIn/scalarIn etc... --> Promise
+Shortcuts to Session operations connect to specified database
+```js
+User.insertIn('db1', { nick: 'db1user' });
+```
+
+#### all/insert/update/delete/select/selectOne/find/scalar etc... --> Promise
 Shortcuts to Session operations connect to DEFAULT DATABASE
 
+#### fix(data, [names]) --> Promise
+Convert specified properties into appropriate type, convert all when names is ommited
+
+#### fixProperty(data, name) --> Promise
+Convert specified property into appropriate type
+
+#### fixValue(name, value) --> Promise
+Convert specified property's value into appropriate type
+
+#### validate(data, [names], forceUpdate) --> Promise
+Validate specified properties, validate all when names is ommited
+If Model have a autoIncrement column, this will run FULL or OWN PROPERTIES ONLY base on autoIncrement property's value. or you can pass forceUpdate as TRUE to force OWN PROPERTIES ONLY validation.
+
+#### validateProperty(data, name) --> Promise
+Validate specified property
+
+#### validateValue(name, value) --> Promise
+Validate specified property with value
+
+### Instance Methods
+
+#### fix([name|names]) --> Promise
+Ommited: fix all properties
+String: fix one property
+Array: fix set of properties
+
+#### validate([forceUpdate|name|names]) --> Promise
+Ommited: validate all or partial properties base on AutoIncrement property's value
+TRUE: validate Own Properties of current instance
+String: validate one property
+Array: validate specified properties
+
+
+### Events
+All events are defined as static property to Model, return value is optional
+```js
+User.onUpdateCell = function(field, value, id) {
+  var user = User.find(id);
+  if (user.disabled)
+    return Promise.reject('User is disabled');
+}
+```
+
+#### Model.beforeCell = function(field, value, id) --> Promise
+Invoked between validation and save to database, return a rejected promise to stop saving
+
+#### Model.afterCell = function(field, value, id) --> Promise
+...
+
+#### Model.beforeUpdate = function(data) --> Promise
+...
+
+#### Model.afterUpdate = function(data) --> Promise
+...
+
+#### Model.beforeInsert = function(data) --> Promise
+...
+
+#### Model.afterInsert = function(data) --> Promise
+...
 
 ## Migration
 

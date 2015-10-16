@@ -2,6 +2,7 @@ var em = require('../index.js');
 var should = require('should');
 var shouldPromised = require('should-promised');
 var path = require('path');
+var Promise2 = require('bluebird');
 
 describe('Validation test', function() {
   before(function() {
@@ -68,12 +69,12 @@ describe('Validation test', function() {
     });
     
     var user = new User({ email: 'notaemail' });
-    return user.validate().should.be.rejectedWith({ propertyName: 'email', message: message });
+    return user.validate().should.be.rejectedWith({ propertyName: 'email', description: message });
   });
 
   it('matches', function() {
     var User = em.define('User', {
-      nick: { type: 'string', length: 50, matches: /^\w{5,8}$/, message: 'Nick should be consist by 5~8 letters' }
+      nick: { type: 'string', length: 50, matches: /^\w{5,8}$/, description: 'Nick should be consist by 5~8 letters' }
     });
     var user = new User({ nick: 'abcdefghijkl,n' });
     return user.validate().should.be.rejectedWith({ propertyName: 'nick' });
@@ -98,5 +99,28 @@ describe('Validation test', function() {
 
     var user = new User({ nick: 'someone', lastLogonAt: new Date() });
     return user.validate(true).should.be.fulfilled();
+  });
+
+  it('fix value', function() {
+    var User = em.define('User', {
+      age: { type: 'int' }
+    });
+    var user = new User({ age: '12' });
+    user.fix().then(function() {
+      user.age.should.be.exactly(12);
+      user.age.should.be.Number();
+    });
+  });
+
+  it('abort by event after validation', function() {
+    var User = em.define('User', {
+      id: { type: 'int', autoIncrement: true, primaryKey: true },
+      nick: { type: 'string', length: 50 }
+    });
+    User.beforeInsert = function(data) {
+      return Promise2.reject({ message: 'rejecthaha' });
+    };
+
+    User.save({ nick: 'haha' }).should.be.rejectedWith('rejecthaha');
   });
 });

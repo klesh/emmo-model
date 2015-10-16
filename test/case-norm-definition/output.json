@@ -5,7 +5,8 @@
       "id": {
         "type": "int",
         "primaryKey": true,
-        "autoIncrement": true
+        "autoIncrement": true,
+        "allowNull": true
       },
       "nick": {
         "type": "string",
@@ -13,14 +14,17 @@
         "allowNull": false
       },
       "isAdmin": {
-        "type": "bool"
+        "type": "bool",
+        "allowNull": true
       },
       "email": {
         "type": "string",
-        "length": 100
+        "length": 100,
+        "allowNull": true
       },
       "departmentId": {
-        "type": "int"
+        "type": "int",
+        "allowNull": true
       }
     },
     "primaryKeys": {

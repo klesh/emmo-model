@@ -8,6 +8,7 @@ var Migrator = require('./lib/migrator.js');
 var Sql = require('./lib/sql-generator.js');
 var createModel = require('./lib/create-model.js');
 var Expression = require('./lib/expression.js');
+var Promise2 = require('bluebird');
 
 function EmmoModel() {
   // initialize definition, add _Migration model to store model definition.
@@ -22,7 +23,9 @@ function EmmoModel() {
 
 EmmoModel.prototype.init = function(options) {
   if (!options) {
-    options = require(path.resolve('./em.json'));
+    this.jsonPath = path.resolve('./em.json');
+    this.json = require(this.jsonPath);
+    options = _.clone(this.json);
     if (options.modelsPath) options.modelsPath = path.resolve(options.modelsPath);
     if (options.migrationsPath) options.migrationsPath = path.resolve(options.migrationsPath);
   }
@@ -31,9 +34,11 @@ EmmoModel.prototype.init = function(options) {
     migrationsPath: path.resolve('./migrations'),
     dialect: 'pg',
     connectionString: '',
-    database: '',
     autoTrim: true
   }, options);
+
+  if (!options.database)
+    throw new Error('database can not be empty');
 
   // load models
   fs.readdirSync(this.modelsPath).forEach(function(fileName) {
@@ -71,6 +76,13 @@ EmmoModel.prototype.init = function(options) {
     this.agent._Session = _Session;
   }
   this.Session = this.agent._Session;
+
+  if (this.onReady) _.each(this.onReady, function(onReady) { onReady(); });
+};
+
+EmmoModel.prototype.ready = function(callback) {
+  this.onReady = this.onReady || [];
+  this.onReady.push(callback);
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
@@ -120,7 +132,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   var database, job, self = this;
   if (_.isFunction(arg2)) {
     job = arg2;
-    database = arg1;
+    database = arg1 || this.database;
   } else {
     job = arg1;
     database = this.database;
@@ -129,16 +141,26 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   return job(session).finally(session.close.bind(session));
 };
 
-EmmoModel.prototype.createOrMigrate = function() {
+EmmoModel.prototype.sync = function(p) {
   if (!this.agent) this.init();
   var self = this;
-  return self.create(this.database)
-    .then(function(){
-      return self.initial(self.database).return(true);
-    })
-    .error(function() {
-      return self.migrate(self.database).return(false);
+  var databases = this.all || [ this.database ];
+  var cb = _.noop;
+
+  if (_.isString(p))
+    databases = [ p ];
+  else if (_.isArray(p))
+    databases = p;
+  else if (_.isFunction(p))
+    cb = p;
+
+  return Promise2.each(databases, function(database) {
+    return self.create(database).tap(function(isNew) {
+      cb(database, isNew === true);
+    }).error(function() {
+      return self.migrate(database);
     });
+  });
 };
 
 EmmoModel.prototype.dropCreate = function() {
@@ -146,9 +168,22 @@ EmmoModel.prototype.dropCreate = function() {
   var self = this;
   return self.remove(self.database).finally(function() {
     return self.create(self.database);
-  }).then(function() {
-    return self.initial(self.database);
   });
+};
+
+EmmoModel.prototype.saveChange = function(isCreate, database) {
+  if (!this.jsonPath) return;
+  var all = this.json.all || [];
+  var index = all.indexOf(database);
+  if (isCreate && index < 0)
+    all.push(database);
+  else if (index >= 0)
+    _.pullAt(all, index);
+  if (all.length === 0 && this.json.hasOwnProperty('all'))
+    delete this.json.all;
+  else
+    this.json.all = all;
+  fs.writeFileSync(this.jsonPath, JSON.stringify(this.json, null, 2));
 };
 
 EmmoModel.prototype.create = function(database) {
@@ -157,7 +192,11 @@ EmmoModel.prototype.create = function(database) {
   var self = this;
   return this.scope(this.agent.defaultDatabase, function(db) {
     return db.query(self.agent.createDatabase(database));
-  });
+  }).then(function() {
+    return self.initial(database);
+  }).tap(function() {
+    return self.saveChange(true, database);
+  }).thenReturn(true);
 };
 
 EmmoModel.prototype.remove = function(database) {
@@ -166,6 +205,8 @@ EmmoModel.prototype.remove = function(database) {
   var self = this;
   return this.scope(this.agent.defaultDatabase, function(db) {
     return db.query(self.agent.dropDatabase(database));
+  }).tap(function() {
+    return self.saveChange(false, database);
   });
 };
 
@@ -174,10 +215,9 @@ EmmoModel.prototype.initial = function(database) {
   var initialScript = this.getInitialScript();
   var migrator = this.getMigrator();
   return this.scope(database, function(db) {
-    return db.query(initialScript)
-      .then(function() {
-        return db.insert('_Migration', migrator.lastMigrationData());
-      });
+    return db.query(initialScript).then(function() {
+      return db.insert('_Migration', migrator.lastMigrationData());
+    });
   });
 };
 

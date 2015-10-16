@@ -1,8 +1,12 @@
 {
-  "modelsPath": "models",
-  "migrationsPath": "migrations",
+  "modelsPath": "test/models",
+  "migrationsPath": "test/migrations",
   "dialect": "pg",
   "connectionString": "/var/run/postgresql %s",
   "database": "emtest",
-  "autoTrim": true
+  "autoTrim": true,
+  "all": [
+    "emtest",
+    "emtest1"
+  ]
 }
