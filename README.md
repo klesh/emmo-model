@@ -366,16 +366,16 @@ User.selectIn('other_database', { field: [ 'id', 'nick' ] })
 ### Static Methods
 
 #### saveIn(database, data, [forceUpdate]) --> Promise
-Run validation and then trigger beforeUpdate/beforeInsert event, and then insert/update to specified DATABASE
-Return a rejected promise in event listener can stop data being saved
-afterUpdate/afterInsert will be triggered if successful
+Run validation and then trigger beforeUpdate/beforeInsert event, and then insert/update to specified DATABASE.
+Return a rejected promise in beforeUpdate/beforeInsert can stop data being saved.
+afterUpdate/afterInsert will be triggered if successful.
 
 #### save(data, [forceUpdate]) --> Promise
 Shortcut to DEFAULT DATABASE of saveIn
 
 #### cellIn(database, field, value, pkvalue) --> Promise
-Run validation and then trigger beforeCell event, and then Update specific cell's value in database, 
-Return a rejected promise in event listener can stop data being saved
+Run validation and then trigger beforeCell event, and then Update specific cell's value in database.
+Return a rejected promise in beforeCell can stop data being saved.
 afterCell will be triggered if successful
 
 #### cell(field, value, pkvalue) --> Promise
