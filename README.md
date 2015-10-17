@@ -56,7 +56,7 @@ modify myproject/bin/www to bootstrap emmo-model before server start.
 var em = require('emmo-model');
 var User = require('../models/user.js');
 
-em.sync(function(databaseName, isNew) {
+em.sync(function(isNew, databaseName) {
   if (isNew) { // to insert initial data;
     User.insert({ account: 'admin', password: 'hi' });
   }
@@ -159,7 +159,7 @@ Function: will be call when database is created or migrated, two arguments will 
 
 Create and initial database if it doesn't exists
 ```js
-em.sync(function(name, isNew) {
+em.sync(function(isNew, name) {
     if (isNew) {
         
     }

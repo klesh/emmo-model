@@ -156,9 +156,12 @@ EmmoModel.prototype.sync = function(p) {
 
   return Promise2.each(databases, function(database) {
     return self.create(database).tap(function(isNew) {
-      cb(database, isNew === true);
+      return cb(true, database);
     }).error(function() {
-      return self.migrate(database);
+      self.saveChange(true, database);
+      return self.migrate(database).then(function() {
+        return cb(false, database);
+      });
     });
   });
 };

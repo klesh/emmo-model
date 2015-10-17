@@ -12,7 +12,7 @@ var jsonPath = path.resolve('./em.json');
 var database;
 
 describe('EmmoModel', function() {
-  before('all', function() {
+  before('sync', function() {
     this.timeout(10 * 1000);
     var json = require('../tpl/em.json');
     json.modelsPath = 'test/models';
@@ -24,26 +24,21 @@ describe('EmmoModel', function() {
     return Promise2.all(_.map([ database, 'emtest1' ], function(name) {
       return em.remove(name);
     })).finally(function() {
-      return em.sync();
+      return em.sync(function(isNew, name) {
+        should(name).be.exactly(database);
+        should(isNew).be.true();
+      }).then(function() {
+        should(readJson().all).be.deepEqual([ database ]);
+        return em.create('emtest1');
+      }).then(function() {
+        should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
+      });
     });
   });
 
   function readJson() {
     return JSON.parse(fs.readFileSync(jsonPath).toString());
   }
-
-  it('sync', function() {
-    this.timeout(10 * 1000);
-    return em.sync(function(name, isNew) {
-      should(name).be.exactly(database);
-      should(isNew).be.true();
-    }).then(function() {
-      should(readJson().all).be.deepEqual([ database ]);
-      return em.create('emtest1');
-    }).then(function() {
-      should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
-    });
-  });
 
   it('insert/select/update/delete', function() {
     var user = { nick: 'emtest', isAdmin: true, email: 'emtest@test.com' };
