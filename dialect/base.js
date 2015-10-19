@@ -173,7 +173,7 @@ module.exports = {
                       this.quote(columnName),
                       this.columnType(columnDef)) + this.separator;
   },
-  changeColumnDefault: function(tableName, columnName, columnDef) {
+  changeColumnDefaultValue: function(tableName, columnName, columnDef) {
     return util.format('ALTER TABLE %s ALTER COLUMN %s %s',
                       this.quote(tableName),
                       this.quote(columnName),
