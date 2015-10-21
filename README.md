@@ -261,7 +261,10 @@ em.scope(function(db) {
 ```
 
 ### update(modelName, data, [where])
-Update model base on data's keys, 
+where can be:
+  * undefined: update by primary keys which provided altogether within data
+  * array/string: to pick up where values from data.
+  * plain object: just like where parameter in select method
 ```js
 // database user: { id: 1, firstName: 'Klesh', lastName: 'Wong' }
 em.scope(function(db) {
@@ -282,6 +285,9 @@ em.scope(function(db) {
 })
 
 ```
+
+### upsert(modelName, data, [where])
+Run update first, and if affected rows is zero then run a insert operation.
 
 ### save(modelName, data, [forceUpdate])
 Validate and Insert/Update row base on AutoIncrement column's value if forceUpdate is omitted
