@@ -37,7 +37,7 @@ var commanders = {
       ].join('\n');
 
       var migrationsPath = path.resolve(em.migrationsPath);
-      if (!fs.existsSync(migrationsPath)) fs.mkdir(migrationsPath);
+      if (!fs.existsSync(migrationsPath)) fs.mkdirSync(migrationsPath);
 
       return fs.writeFile(path.resolve(em.migrationsPath, fullName), migrateScript, function() {
         console.log("Migration %s is created successfully.", fullName);
