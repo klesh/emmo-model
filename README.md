@@ -63,6 +63,7 @@ em.sync(function(isNew, databaseName) {
   server.listen(4000);
 });
 ```
+Sync method will CREATE or MIGRATE database automatically.
 
 ### CRUD
 myproject/routes/index.js
