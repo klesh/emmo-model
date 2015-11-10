@@ -321,6 +321,7 @@ Object: pass a Object indicates an AND situation
 ```js
 User.scalar({ field: em.count(), where: { age: [ '>', 20 ], departmentId: 1 } });
 User.scalar({ field: em.avg('age'), where: { id: [ 'in', [1, 2, 3] ] } });
+User.scalar({ field: em.avg('age'), where: { id: [ ['>', 20], 'OR', ['<', 10] ] } });
 ```
 
 #### order
