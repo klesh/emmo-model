@@ -45,14 +45,16 @@ var commanders = {
     });
   },
   init: function(argv) {
-    var configPath = path.resolve('./tpl/em.json');
+    var configPath = path.resolve('./em.json');
     fs.exists(configPath, function(exists) {
       if (exists)
         return console.log('em.json already exists.');
 
-      var samplePath = path.resolve(__dirname, '..', 'em.json');
-      var sample = fs.readFileSync(samplePath);
-      fs.writeFileSync(configPath, sample);
+      var samplePath = path.resolve(__dirname, '../tpl/', 'em.json');
+      var sample = require(samplePath);
+      var projectName = path.basename(path.resolve('./'));
+      sample.database = projectName;
+      fs.writeFileSync(configPath, JSON.stringify(sample, null, 2));
 
       var modelsPath = path.resolve('./models');
       if (!fs.existsSync(modelsPath))
