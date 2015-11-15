@@ -7,7 +7,6 @@ var path = require('path');
 var fs = require('fs');
 var em = require('../index.js');
 var Sql = require('../lib/sql-generator.js');
-var colors = require('colors');
 var util = require('util');
 
 var command = argv._[0];
