@@ -245,3 +245,17 @@ module.exports = new EmmoModel();
 module.exports.new = function(options) {
   return new EmmoModel(options);
 };
+module.exports.mound = function(handler) {
+  return function(req, res, next) {
+    var promise = handler(req, res, next);
+    if (!_.isFunction(promise.then))
+      throw new Error('Expect returning a promise instance');
+
+    promise.then(function(result) {
+      return res.json(result);
+    }).catch(function(err) {
+      res.status(400);
+      res.json(err);
+    });
+  };
+};

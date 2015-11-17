@@ -8,11 +8,12 @@ Install emmo-model-cli to help you generate necessary files
 $ sudo npm install emmo-model-cli -g
 ```
 
-Enter your project folder and install emmo-model
+Enter your project folder and install emmo-model and database connector(currently only pg available)
 
 ```bash
 $ cd myproject
 $ npm install emmo-model --save
+$ npm install pg --save
 $ em init
 ```
 That would create `em.json` file, `models/` and `migrations/` folders in myproject/
@@ -144,6 +145,21 @@ route.get('/', function(req, res) {
     res.json(user);
   });
 })
+```
+
+## Utils
+
+### em.mount(handler)
+Return a wrapped middleware function. Used to convert a promise as a JSON API service.
+All resolved result will be output in JSON format.
+All rejected result will be output in JSON format WITH a 400 bad request status code.
+```js
+var Promise2 = require('bluebird');
+app.get('/user', em.mount(function(req, res) {
+  return User.find(req.params.id).then(function(user) {
+    if (!user) return Promise2.reject({ code: 'ENOTFOUND', description: 'Can not find specified user, might be deleted during request' });
+  });
+}))
 ```
 
 ## EmmoModel
