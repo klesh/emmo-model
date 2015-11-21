@@ -80,9 +80,16 @@ EmmoModel.prototype.init = function(options) {
   if (this.onReady) _.each(this.onReady, function(onReady) { onReady(); });
 };
 
+// callback will be trigger when database is created or migrated
 EmmoModel.prototype.ready = function(callback) {
   this.onReady = this.onReady || [];
   this.onReady.push(callback);
+};
+
+// callback will be trigger when database is craeted
+EmmoModel.prototype.initialize = function(callback) {
+  this.onInitial = this.onInitial || [];
+  this.onInitial.push(callback);
 };
 
 EmmoModel.prototype.define = function(name, columns, options) {
@@ -155,7 +162,14 @@ EmmoModel.prototype.sync = function(p) {
     cb = p;
 
   return Promise2.each(databases, function(database) {
-    return self.create(database).tap(function(isNew) {
+    return self.create(database).tap(function() {
+      if (!self.onInitial) 
+        return ;
+
+      return Promise2.all(self.onInitial.map(function(oi) {
+        return oi.call(self);
+      }));
+    }).tap(function(){
       return cb(true, database);
     }).error(function() {
       self.saveChange(true, database);
@@ -245,7 +259,7 @@ module.exports = new EmmoModel();
 module.exports.new = function(options) {
   return new EmmoModel(options);
 };
-module.exports.mound = function(handler) {
+module.exports.mount = function(handler) {
   return function(req, res, next) {
     var promise = handler(req, res, next);
     if (!_.isFunction(promise.then))
@@ -255,7 +269,9 @@ module.exports.mound = function(handler) {
       return res.json(result);
     }).catch(function(err) {
       res.status(400);
-      res.json(err);
+      if (err.description) // valid description property indicates this is handled rejection
+        return res.json(err);
+      throw err;
     });
   };
 };
