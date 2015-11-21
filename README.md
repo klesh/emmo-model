@@ -22,11 +22,12 @@ That would create `em.json` file, `models/` and `migrations/` folders in myproje
 
 ### define model
 
+assume we have users in our system.
 myproject/models/user.js
 ```js
 var em = require('emmo-model');
 
-module.exports = em.define('User', {
+var User = module.exports = em.define('User', {
   id: { type: 'bigint', autoIncrement: true, primaryKey: true }, // bigserial(postgres)
   account: { type: 'string', length: 50, allowNull: false, unique: true }, // varchar(50)
   firstName: { type: 'string', length: 50 },
@@ -41,14 +42,58 @@ module.exports = em.define('User', {
   }
 });
 ```
+
+assume we need a role base access control machanism.
 myproject/models/role.js
 ```js
 var em = require('emmo-model');
 
-module.exports = em.define('Role', {
+var Role = module.exports = em.define('Role', {
   id: { type: 'int', autoIncrement: true, primaryKey: true },
-  name: { type: 'string', length: 50, allowNull: false }
+  name: { type: 'string', length: 50, allowNull: false },
+  permissions: { type: 'json' }
 })
+```
+
+then we need to make a Many-To-Mary relationship between user and role.
+myproject/models/user-role.js 
+```js
+var em = require('emmo-model');
+
+var UserRole = module.exports = em.define('UserRole' {
+  userId: { type: 'bigint', refer: 'User', allowNull: false, onDelete: 'CASCADE', primaryKey: true }, // build up simple foreign key relationship
+  roleId: { type: 'int', refer: 'Role', allowNull: false, onDelete: 'CASCADE', primaryKey: true }, // build up simple foreign key relationship
+  disabled: { type: 'boolean' }
+});
+```
+
+assume we need to log down who and when created/disabled the UserRole relationship.
+myproject/models/user-role-log.js
+```js
+var em = require('emmo-model');
+
+var UserRoleLog = module.exports = em.define('UserRoleLog', {
+  id: { type: 'bigint', autoIncrement: true, primaryKey: true },
+  userId: { type: 'bigint', refer: 'UserRole', allowNull: false, onDelete: 'CASCADE' }, // refer composite primary key
+  roleId: { type: 'int', refer: 'UserRole', allowNull: false, onDelete: 'CASCADE' }, // emmo-model assumes that all columns refer same table is a composite foreign key
+  operator: { type: 'string', length: 50 },
+  operation: { type: 'string' },
+  createdAt: { type: 'timestamptz', defaultValue: 'now()' }
+});
+```
+
+assume we need to track down user's relationship
+myproject/models/relation.js
+```js
+var em = require('emmo-model');
+
+var Relation = module.exports = em.define('Relation', {
+  userId: { type: 'bigint', refer: 'User', referName: 'FK_User_Relation_userId', onDelete: 'CASCADE', allowNull: false }, 
+  // add referName to avoid the composite foreign key, you can also assign a same referName for multiple columns to declare a specific composite foreign key.
+  relativeId: { type: 'bigint', refer: 'User', referName: true, onDelete: 'CASCADE', allowNull: false } 
+  // or you can just give a TRUE to let emmo-model generate a referName for this specific column.
+  description: { type: 'string', length: 50 }
+});
 ```
 
 ### bootstrap

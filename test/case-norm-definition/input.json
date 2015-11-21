@@ -10,5 +10,26 @@
     "options": {
     
     }
+  },
+  "Relation": {
+    "columns": {
+      "userId": { "type": "int", "primaryKey": true, "refer": "User", "referName": true, "allowNull": false, "onDelete": "CASCADE" },
+      "relativeId": { "type": "int", "primaryKey": true, "refer": "User", "referName": "FK_User_Relations_relativeId", "allowNull": false, "onDelete": "CASCADE" }
+    },
+    "options": {
+
+    }
+  },
+  "RelationHistory": {
+    "columns": {
+      "id": { "type": "bigint", "primaryKey": true, "autoIncrement": true },
+      "userId": { "type": "int", "refer": "Relation", "allowNull": false, "onDelete": "CASCADE" },
+      "relativeId": { "type": "int", "refer": "Relation", "allowNull": false, "onDelete": "CASCADE" },
+      "description": { "type": "string" },
+      "startedAt": { "type": "timestamptz" }
+    },
+    "options": {
+
+    }
   }
 }

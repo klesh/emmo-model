@@ -44,12 +44,98 @@
     ],
     "foreignKeys": [
       {
-        "name": "FK_Users_departmentId",
+        "name": "FK_Department_Users",
         "columns": [
           "departmentId"
         ],
         "refer": "Department",
         "onDelete": "SET NULL"
+      }
+    ]
+  },
+  "Relation": {
+    "tableName": "Relations",
+    "columns": {
+      "userId": {
+        "type": "int",
+        "primaryKey": true,
+        "allowNull": false
+      },
+      "relativeId": {
+        "type": "int",
+        "primaryKey": true,
+        "allowNull": false
+      }
+    },
+    "primaryKeys": {
+      "name": "PK_Relations",
+      "columns": [
+        "userId",
+        "relativeId"
+      ]
+    },
+    "indexes": [],
+    "foreignKeys": [
+      {
+        "name": "FK_User_Relations_userId",
+        "columns": [
+          "userId"
+        ],
+        "refer": "User",
+        "onDelete": "CASCADE"
+      },
+      {
+        "name": "FK_User_Relations_relativeId",
+        "columns": [
+          "relativeId"
+        ],
+        "refer": "User",
+        "onDelete": "CASCADE"
+      }
+    ]
+  },
+  "RelationHistory": {
+    "tableName": "RelationHistories",
+    "columns": {
+      "id": {
+        "type": "bigint",
+        "primaryKey": true,
+        "autoIncrement": true,
+        "allowNull": true
+      },
+      "userId": {
+        "type": "int",
+        "allowNull": false
+      },
+      "relativeId": {
+        "type": "int",
+        "allowNull": false
+      },
+      "description": {
+        "type": "string",
+        "allowNull": true
+      },
+      "startedAt": {
+        "type": "timestamptz",
+        "allowNull": true
+      }
+    },
+    "primaryKeys": {
+      "name": "PK_RelationHistories",
+      "columns": [
+        "id"
+      ]
+    },
+    "indexes": [],
+    "foreignKeys": [
+      {
+        "name": "FK_Relation_RelationHistories",
+        "columns": [
+          "userId",
+          "relativeId"
+        ],
+        "refer": "Relation",
+        "onDelete": "CASCADE"
       }
     ]
   }
