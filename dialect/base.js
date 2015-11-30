@@ -251,6 +251,9 @@ module.exports = {
 
       return 'COUNT(*)';
     },
+    distinct: function(p1) {
+      return util.format('DISTINCT %s', this.quote(p1));
+    },
     avg: function(p1) {
       return util.format('AVG(%s)', this.quote(p1));
     },
