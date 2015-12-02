@@ -9,6 +9,7 @@ var Sql = require('./lib/sql-generator.js');
 var createModel = require('./lib/create-model.js');
 var Expression = require('./lib/expression.js');
 var Promise2 = require('bluebird');
+Promise2.longStackTraces();
 
 function EmmoModel() {
   // initialize definition, add _Migration model to store model definition.
@@ -77,7 +78,6 @@ EmmoModel.prototype.init = function(options) {
   }
   this.Session = this.agent._Session;
 
-  if (this.onReady) _.each(this.onReady, function(onReady) { onReady(); });
 };
 
 // callback will be trigger when database is created or migrated
@@ -171,11 +171,13 @@ EmmoModel.prototype.sync = function(p) {
       }));
     }).tap(function(){
       return cb(true, database);
-    }).error(function() {
+    }).error(function(err) {
       self.saveChange(true, database);
       return self.migrate(database).then(function() {
         return cb(false, database);
       });
+    }).then(function() {
+      if (self.onReady) _.each(self.onReady, function(onReady) { onReady(); });
     });
   });
 };
