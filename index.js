@@ -38,6 +38,9 @@ EmmoModel.prototype.init = function(options) {
     autoTrim: true
   }, options);
 
+  if (!options.connectionString)
+    throw new Error('connectionString can not be empty');
+
   if (!options.database)
     throw new Error('database can not be empty');
 
