@@ -408,6 +408,40 @@ String: group by single column
 #### having
 Object: same as where parameter
 
+### Transaction
+
+```js
+var Promise = require('bluebird');
+
+em.scope(function(db) {
+  return db.query('BEGIN;').then(function() {
+    return Promise.each([ 'user1', 'user2' ], function(name) {
+      return db.inesrt('User', { name: name });
+    })
+  }).then(function() {
+    return db.query('COMMIT;');  
+  }).catch(function(err) {
+    return db.query('ROLLBACK');
+  });
+})
+```
+
+### Complicated Query
+JOIN clause is not supported currently, but you can perform your own query to achieve the goal.
+
+Assuming one User belong
+```js
+em.scope(function(db) {
+  return db.query('SELECT u.*, d."name" AS "departmentName" FROM "Users" u LEFT JOIN "Departments" d ON (u."departmentId" = d."id") WHERE u."id" = $1', [ userId ]);
+}).then(function(user) {
+  ...
+})
+```
+query method also available in following manner (which essentially em.scope's shortcut):
+```js
+User.query('SELECT ....', [ parameter ])
+```
+
 
 ## Model
 em.define will return a Model constructor, which can be use to instantiate new instance, run validation and save to database.
