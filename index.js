@@ -166,13 +166,6 @@ EmmoModel.prototype.sync = function(p) {
 
   return Promise2.each(databases, function(database) {
     return self.create(database).tap(function() {
-      if (!self.onInitial) 
-        return ;
-
-      return Promise2.all(self.onInitial.map(function(oi) {
-        return oi.call(self);
-      }));
-    }).tap(function(){
       return cb(true, database);
     }).error(function(err) {
       self.saveChange(true, database);
@@ -218,6 +211,13 @@ EmmoModel.prototype.create = function(database) {
     return self.initial(database);
   }).tap(function() {
     return self.saveChange(true, database);
+  }).tap(function() {
+    if (!self.onInitial) 
+      return ;
+
+    return Promise2.all(self.onInitial.map(function(oi) {
+      return oi.call(self);
+    }));
   }).thenReturn(true);
 };
 

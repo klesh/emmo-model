@@ -562,7 +562,7 @@ $ cd myproject
 $ em migrate MIGRATION_NAME
 ```
 That will create a migration sql script file in myproject/migrations.
-All migrations will be executed smartly by invoking createOrMigrate().
+All migrations will be executed smartly by invoking sync().
 
 ## Notice
 This is a very immature framework, pull requests and suggestion are gratefully welcome.
