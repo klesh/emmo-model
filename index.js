@@ -174,7 +174,9 @@ EmmoModel.prototype.sync = function(p) {
       });
     }).then(function() {
       if (self.onReady)
-        return Promise2.all(self.onReady);
+        return Promise2.each(self.onReady, function(orcb) {
+          return orcb.call(self);
+        });
     });
   });
 };
@@ -214,7 +216,9 @@ EmmoModel.prototype.create = function(database) {
     return self.saveChange(true, database);
   }).tap(function() {
     if (self.onInitial)
-      return Promise2.all(self.onInitial);
+      return Promise2.each(self.onInitial, (function(cb) {
+        return cb.call(self);
+      }));
   }).thenReturn(true);
 };
 
