@@ -1,52 +1,118 @@
 var util = require('util');
 var _ = require('lodash');
 
-// all comments asssume using pg dialect
-module.exports = {
-  // default database name, for creating/droping database
+/**
+ * This provoides common methods used for dialect implementation,
+ *
+ * @mixin
+ */
+var DialectAgent = {
+  /**
+   * must be assigned in dialect implemtation, like 'postgres' for postgres, 'master' for MSSQL
+   * @type {string}
+   */
   defaultDatabase: '',
-  // auto increment column statement;
-  autoIncrement: '',
-  // separator between sql statement;
+
+  /**
+   * either assign a proper value for this field or implement `column` method
+   * @type {string}
+   */
+  autoIncrement: 'AUTO_INCREMENT',
+
+  /**
+   * in case of some weird database have different one
+   * @type {string}
+   */
   separator: ';', 
-  // parameter placehold for sql query statement
+
+  /**
+   * return parameter placeholder mark for SQL statement base on index
+   * 
+   * @param {number} index   parameter position, 0 base
+   * @return {string}
+   */
   placehold: function(index) {
     return '?';
   },
-  // transfer query into offset format
-  offset: function(sql, index) {
-    return sql + ' OFFSET ' + this.placehold(index);
+
+  /**
+   * Transform SQL statement to a OFFSET/SKIP manner
+   *
+   * @param {string} sql
+   * @param {string} placehold
+   * @returns {string}
+   */
+  offset: function(sql, placehold) {
+    return sql + ' OFFSET ' + placehold;
   },
-  // transfer query into limit format
-  limit: function(sql, index) {
-    return sql + ' LIMIT ' + this.placehold(index);
+
+  /**
+   * Transform SQL statement to a LIMIT/TOP manner
+   *
+   * @param {string} sql
+   * @param {string} placehold
+   * @returns {string}
+   */
+  limit: function(sql, placehold) {
+    return sql + ' LIMIT ' + placehold;
   },
-  // convert query result into plain object/array
-  result: function(result) {
-    result.rows.affectedRows = result.rowCount;
-    return result.rows;
+
+  /**
+   * should be implemented in dialect implementation.
+   *
+   * @param {any}    dialectResult   returned by dialect query method
+   * @returns {Result}
+   */
+  result: function(dialectResult) {
+    dialectResult.rows.affectedRows = dialectResult.rowCount;
+    return dialectResult.rows;
   },
-  // quote resource name,
+
+  /**
+   * quote a database object, like table, column
+   *
+   * @param {string} name
+   * @returns {string}
+   */
   quote: function(name) {
     return name;
   },
+
+  /**
+   * quote a plain text
+   *
+   * @param {string} text
+   * @returns {string}
+   */
   quoteString: function(text) {
     if (text === null || text === undefined) return 'NULL';
     if (text === '') return '';
     return util.format("'%s'", text.replace(/'/g, "''"));
   },
-  // escape text constant
+
+  /* escape text constant
   escape: function(text) {
     return text.replace(/'/g, "''");
   },
-  // quote and join column names separated by ,
-  // ['col1', 'col2'] to  '"col1", "col2"'
+  */
+  
+  /**
+   * quote and join column names, like ['col1', 'col2'] to  "col1", "col2"
+   * 
+   * @param {string[]} columNames
+   * @returns {string}
+   */
   joinColumns: function(columnNames) {
     return columnNames.map(this.quote).join(', ');
   },
-  /* quote and join column names with sorting order seperated by ,
+
+  /**
+   * quote and join column names with sorting order seperated by ,
    * (from) { col1: 'ASC', col2: 'DESC' }
    * ( to ) "col1" ASC, "col2" DESC
+   *
+   * @param {{column: string, order: string}} orderedColumns
+   * @returns {string}
    */
   joinOrderedColumns: function(orderedColumns) {
     var self = this;
@@ -56,9 +122,14 @@ module.exports = {
     });
     return script.join(', ');
   },
-  /* return type statement
+
+  /**
+   * return sql type statement
    * (from) { type: 'int', autoIncrement: true } 
    * ( to ) serial
+   *
+   * @param {Column} columnDef
+   * @returns {string}
    */
   columnType: function(columnDef) {
     if (columnDef.type == 'string')
@@ -66,9 +137,13 @@ module.exports = {
 
     return columnDef.type;
   },
-  /* return columns statement
+
+  /* return sql columns statement
    * (from) { id: { type: 'int' }, name: { type: 'string', length: 50 } } 
    * ( to )   "id" int,\n  "name" varchar(50)
+   *
+   * @param {Column[]} columnDef
+   * @return {string}
    */
   columns: function(columnsDef) {
     var self = this;
@@ -78,9 +153,13 @@ module.exports = {
     });
     return script.join(',\n');
   },
+
   /* return column definition statement
    * (from) {type: 'int', allowNull: false, defaultVaue: '0'}
    * ( to ) int NOT NULL DEFAULT 0
+   *
+   * @param {Column} columnDef
+   * @returns {string}
    */
   column: function(columnDef) {
     var script = [];
@@ -238,62 +317,283 @@ module.exports = {
                       this.quote(tableName),
                       this.quote(name)) + this.separator;
   },
-  // all functions will be attached to DbFunc prototype
+  // all functions will be attached to EmmolaModel instance.
   functions: {
-    count: function(p1, distinct) {
+    /**
+     * sql count function
+     * 
+     * @param {string|number}  [column]
+     * @param {boolean}        [distinct]
+     * @returns {string}
+     */
+    count: function(column, distinct) {
 
-      var np1 = p1 * 1;
-      if (!isNaN(np1))
-        return util.format('COUNT(%d)', np1);
+      var tmp = column * 1;
+      if (!isNaN(tmp)) // column is a number
+        return util.format('COUNT(%d)', tmp);
 
-      if (p1)
-        return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', this.quote(p1));
+      if (column)
+        return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', this.quote(column));
 
       return 'COUNT(*)';
     },
-    distinct: function(p1) {
-      return util.format('DISTINCT %s', this.quote(p1));
+
+    /**
+     * sql distinct function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    distinct: function(column) {
+      return util.format('DISTINCT %s', this.quote(column));
     },
-    avg: function(p1) {
-      return util.format('AVG(%s)', this.quote(p1));
+
+    /**
+     * sql avg function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    avg: function(column) {
+      return util.format('AVG(%s)', this.quote(column));
     },
-    first: function(p1) {
-      return util.format('FIRST(%s)', this.quote(p1));
+
+    /**
+     * sql first function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    first: function(column) {
+      return util.format('FIRST(%s)', this.quote(column));
     },
-    last: function(p1) {
-      return util.format('LAST(%s)', this.quote(p1));
+
+    /**
+     * sql last function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    last: function(column) {
+      return util.format('LAST(%s)', this.quote(column));
     },
-    max: function(p1) {
-      return util.format('MAX(%s)', this.quote(p1));
+
+    /**
+     * sql max function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    max: function(column) {
+      return util.format('MAX(%s)', this.quote(column));
     },
-    min: function(p1) {
-      return util.format('MIN(%s)', this.quote(p1));
+
+    /**
+     * sql min function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    min: function(column) {
+      return util.format('MIN(%s)', this.quote(column));
     },
-    sum: function(p1) {
+
+    /**
+     * sql sum function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    sum: function(column) {
       return util.format('SUM(%s)', this.quote(p1));
     },
-    ucase: function(p1) {
-      return util.format('UCASE(%s)', this.quote(p1));
+
+    /**
+     * sql ucase function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    ucase: function(column) {
+      return util.format('UCASE(%s)', this.quote(column));
     },
-    lcase: function(p1) {
-      return util.format('LCASE(%s)', this.quote(p1));
+
+    /**
+     * sql lcase function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    lcase: function(column) {
+      return util.format('LCASE(%s)', this.quote(column));
     },
-    mid: function(p1, p2, p3) {
-      return util.format(p3 ? "MID(%s, %d, %d)" : "MID(%s, %d)", this.quote(p1), p2, p3);
+
+    /**
+     * sql mid function
+     *
+     * @param {string} column
+     * @param {number} start
+     * @param {number} [length]
+     * @returns {string}
+     */
+    mid: function(column, start, length) {
+      return util.format(length ? "MID(%s, %d, %d)" : "MID(%s, %d)", this.quote(column), start, length);
     },
-    len: function(p1) {
-      return util.format('LEN(%s)', this.quote(p1));
+
+    /**
+     * sql len function
+     * 
+     * @param {string} column
+     * @returns {string}
+     */
+    len: function(column) {
+      return util.format('LEN(%s)', this.quote(column));
     },
-    round: function(p1, p2) {
-      return util.format('ROUND(%s, %d)', this.quote(p1), p2);
+
+    /**
+     * sql round function
+     * @param {string} column
+     * @param {number} precision
+     * @returns {string}
+     */
+    round: function(column, precision) {
+      return util.format('ROUND(%s, %d)', this.quote(column), precision);
     },
+
+    /**
+     * sql now function
+     * @returns {string}
+     */
     now: function() {
       return 'NOW()';
     },
-    format: function(p1, p2) {
-      return util.format('FORMAT(%s, %s)', this.quote(p1), this.quoteString(p2));
+
+    /**
+     * sql format function
+     *
+     * @param {string} column
+     * @param {string} format
+     * @returns {string}
+     */
+    format: function(column, format) {
+      return util.format('FORMAT(%s, %s)', this.quote(column), this.quoteString(format));
+    },
+
+    /**
+     * represent refering a table/column/alias instead of plain value.
+     *
+     * @param {string} name
+     * @returns {string}
+     */
+    o: function(name) {
+      return this.quote(name);
+    },
+
+    // here are some operator
+
+    /**
+     * @param {string} str  text to search
+     * @param {string} pos  'start', 'end', 'any'(default)
+     * @returns {function}
+     */
+    like: function(str, type) {
+      return function(agent, values) {
+        var sql = "LIKE " + agent.placehold(values.length);
+        if (str.indexOf('%') >= 0) {
+          sql += "ESCAPE '\\'";
+          str = str.replace(/%/g, '\\%');
+        }
+        if (type === 'start')
+          str += '%';
+        else if (type == 'end')
+          str = '%' + str;
+        else
+          str = '%' + str + '%';
+      };
+    },
+    
+    /**
+     * @param {string} str
+     * @returns {function}
+     */
+    startsWith: function(str) {
+      return this.like(str, 'start');
+    },
+
+    /**
+     * @param {string} str
+     * @returns {function}
+     */
+    endsWith: function(str) {
+      return this.like(str, 'end');
+    },
+
+    /**
+     * @param {any} value
+     * @returns {function}
+     */
+    gt: function(value) {
+      return function(process) {
+        return '>' + process(value);
+      };
+    },
+
+    /**
+     * @param {any} value
+     * @returns {function}
+     */
+    lt: function(value) {
+      return function(process) {
+        return '<' + process(value);
+      };
+    },
+
+    /**
+     * @param {any} value
+     * @returns {function}
+     */
+    gte: function(value) {
+      return function(process) {
+        return '>=' + process(value);
+      };
+    },
+
+    /**
+     * @param {any} value
+     * @returns {function}
+     */
+    lte: function(value) {
+      return function(process) {
+        return '<=' + process(value);
+      };
+    },
+
+    /**
+     * start and end are included.
+     *
+     * @param {any} start
+     * @param {any} end
+     * @returns {function}
+     */
+    between: function(start, end) {
+      return function(process) {
+        return ' BETWEEN ' + process(start) + ' AND ' + process(end);
+      };
+    },
+
+    /**
+     * add operator
+     *
+     * @param {...any} arguments
+     * @returns {function}
+     */
+    add: function() {
+      var args = arguments;
+      return function(process) {
+        return _.map(args, function(arg) { return process(arg); }).join('+');
+      };
     }
   }
 };
-     // if (!this.hasColumn(p1))
-     //   throw new Error(util.format("column %s does't exists"));
+
+module.exports = DialectAgent;

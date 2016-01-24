@@ -8,16 +8,13 @@ Promise2.promisifyAll(pg);
 
 _.merge(module.exports, base, {
   defaultDatabase: 'postgres',
+  autoIncrement: '',
   placehold: function(index) {
     return '$' + (index * 1 + 1);
   },
   quote: function(name) {
     return '"' + name + '"';
   },
-//  dropDatabase: function(name) {
-//    return util.format("SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '%s' AND pid <> pg_backend_pid();", name) + "\n" + base.dropDatabase(name);
-//  
-//  },
   returnId: function(connection) {
     return this.query(connection, "SELECT LASTVAL()").then(function(result) {
       return result.rows[0].lastval;
@@ -36,8 +33,12 @@ _.merge(module.exports, base, {
   connect: function(connectionString) {
     return pg.connectAsync(connectionString);
   },
-  // return a promise query instance
+  // return a query promise
   query: function(connection, sqlScript, sqlParams) {
     return connection.queryAsync(sqlScript, sqlParams);
+  },
+  // dispose all pooled connection
+  close: function() {
+    return pg.end();
   }
 });

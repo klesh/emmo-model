@@ -1,7 +1,7 @@
 {
   "User": {
     "columns": {
-      "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
+      "id": { "type": "int", "primaryKey": true, "autoIncrement": true, "desc": false },
       "nick": { "type": "string", "length": 50, "unique": true, "allowNull": false },
       "isAdmin": { "type": "bool" },
       "email": { "type": "string", "length": 100, "validate": { "isEmail": true }},

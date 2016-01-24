@@ -29,3 +29,9 @@ node_modules
 
 # Vim swp files
 *.swp
+
+# em.json
+/em.json
+/out
+/trials
+/initial-debug.sql

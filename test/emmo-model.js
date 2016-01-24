@@ -17,18 +17,23 @@ describe('EmmoModel', function() {
     var json = require('../tpl/em.json');
     json.modelsPath = 'test/models';
     json.migrationsPath = 'test/migrations';
+    if (process.env.PGCONNECT) {
+      json.connectionString = process.env.PGCONNECT;
+    }
     fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2));
     database = json.database;
-    if (!database) throw new Error('database can not be error in tpl/em.json');
+    if (!database) throw new Error('database can not be empty in tpl/em.json');
     em.init();
     return Promise2.all(_.map([ database, 'emtest1' ], function(name) {
       return em.remove(name);
     })).finally(function() {
-      return em.sync(function(isNew, name) {
-        should(name).be.exactly(database);
-        should(isNew).be.true();
-      }).then(function() {
+      var readyTriggered = false;
+      em.once('ready', function() {
+        readyTriggered = true;
+      });
+      return em.sync().then(function() {
         should(readJson().all).be.deepEqual([ database ]);
+        should(readyTriggered).be.true();
         return em.create('emtest1');
       }).then(function() {
         should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
@@ -81,13 +86,14 @@ describe('EmmoModel', function() {
   }); 
 
   it('save -> update', function() {
-    return User.insert({ nick: 'sutest' }).then(function(user) {
+    return User.insert({ nick: 'sutest', age: 13 }).then(function(user) {
       should(user.id).be.ok();
-      return User.save({ nick: 'sutest2', id: user.id }).thenReturn(user.id);
+      return User.save({ nick: 'sutest2', age: em.o('age').plus(5), id: user.id }).thenReturn(user.id);
     }).then(function(userId) {
       return User.find(userId);
     }).then(function(user) {
       should(user.nick).be.exactly('sutest2');
+      should(user.age).be.exactly(18);
     });
   });
 
@@ -117,26 +123,43 @@ describe('EmmoModel', function() {
         return Role.all();
       }).then(function(all) {
         should(all.length).be.exactly(6);
-        return Role.paginate({ size:2, page:1, field: [ 'id', 'name'] });
+        return Role.paginate({ size:2, page:1, field: [ 'id', 'name'], order: { 'id': 'DESC' } });
       }).then(function(page1) {
         should(page1.length).be.exactly(2);
         should(page1[0].name).be.exactly('Role6');
         should(page1[1].name).be.exactly('Role5');
         should(_.keys(page1[0]).length).be.exactly(2);
-        return Role.paginate({ size:2, page:3, field: [ 'id', 'name' ] });
+        return Role.paginate({ size:2, page:3, field: [ 'id', 'name' ], order: { 'id': 'DESC' } });
       }).then(function(page3) {
         should(page3[0].name).be.exactly('Role2');
         should(page3[1].name).be.exactly('Role1');
       });
   });
 
+  it('or and in', function() {
+    return Promise2.each([
+      { nick: 'OR1' },
+      { nick: 'OR2' }
+    ], function(user) {
+      return User.insert(user);
+    }).then(function() {
+      return User.all({ where: [ { nick: 'OR1' }, { nick: 'OR2' } ] });
+    }).then(function(users) {
+      should(users.length).be.exactly(2);
+      return User.all({ where: { nick: [ 'OR1', 'OR2' ] } });
+    }).then(function(users) {
+      should(users.length).be.exactly(2);
+    });
+  });
+
   it('alias', function() {
-    return User.insert({ nick: 'aliastest' })
+    return User.insert({ nick: 'aliastest', age: 22 })
       .then(function(user) {
-        return User.selectOne({ field: { name: 'nick' }, where: { id: user.id } });
+        return User.one({ field: { name: 'nick', aged: em.o('age').plus(30) }, where: { id: user.id } });
       })
       .then(function(user) {
         should(user.name).be.exactly('aliastest');
+        should(user.aged).be.exactly(52);
       });
   });
 
@@ -150,9 +173,9 @@ describe('EmmoModel', function() {
   it('avg', function() {
     return em.scope(function(db) {
       return Promise2.each([1, 2, 3, 4], function(age) {
-        return db.insert('User', { nick: 'avgtest' + age, age: age });
+        return db.insert('User', { nick: 'avgtest' + age, age: age, email: 'avgtest@test.com' });
       }).then(function() {
-        return db.scalar('User', { field: db.avg('age') });
+        return db.scalar('User', { field: em.avg('age'), where: { email: 'avgtest@test.com' } });
       });
     }).then(function(avg) {
       should(avg * 1).be.exactly(2.5);
@@ -174,7 +197,7 @@ describe('EmmoModel', function() {
           field: 'departmentId',
           groupby: 'departmentId',
           having: {
-            5: [ '>', db.count() ]
+            _: [ em.count(), 4 ]
           }
         });
       });

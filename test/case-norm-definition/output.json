@@ -6,25 +6,30 @@
         "type": "int",
         "primaryKey": true,
         "autoIncrement": true,
+        "desc": false,
         "allowNull": true
       },
       "nick": {
         "type": "string",
         "length": 50,
-        "allowNull": false
+        "allowNull": false,
+        "desc": true
       },
       "isAdmin": {
         "type": "bool",
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       },
       "email": {
         "type": "string",
         "length": 100,
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       },
       "departmentId": {
         "type": "int",
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       }
     },
     "primaryKeys": {
@@ -38,7 +43,7 @@
         "name": "IX_Users_nick",
         "unique": true,
         "columns": {
-          "nick": "ASC"
+          "nick": "DESC"
         }
       }
     ],
@@ -59,12 +64,14 @@
       "userId": {
         "type": "int",
         "primaryKey": true,
-        "allowNull": false
+        "allowNull": false,
+        "desc": true
       },
       "relativeId": {
         "type": "int",
         "primaryKey": true,
-        "allowNull": false
+        "allowNull": false,
+        "desc": true
       }
     },
     "primaryKeys": {
@@ -101,23 +108,28 @@
         "type": "bigint",
         "primaryKey": true,
         "autoIncrement": true,
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       },
       "userId": {
         "type": "int",
-        "allowNull": false
+        "allowNull": false,
+        "desc": true
       },
       "relativeId": {
         "type": "int",
-        "allowNull": false
+        "allowNull": false,
+        "desc": true
       },
       "description": {
         "type": "string",
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       },
       "startedAt": {
         "type": "timestamptz",
-        "allowNull": true
+        "allowNull": true,
+        "desc": true
       }
     },
     "primaryKeys": {
