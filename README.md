@@ -1,5 +1,5 @@
 # emmo-model.js
-Lightweight/flexible orm framework, supports shadowing databases.
+Flexible lightweight orm framework, supports Structure Mirroring.
 
 ## Why?
 
@@ -10,9 +10,9 @@ Lightweight/flexible orm framework, supports shadowing databases.
       a SQL file will be created accordingly, you can customize it, late on it will be applied
       to all databases smartly
    4. You can `spawn` or `new` a new EmmoModel instance to connect to another Data Server or hold different Model set.
-   5. Provide `fix` function to correct property data type base on definition.
+   5. Provide `fix` function to correct values data type base on definition.
    6. Provide `validate` function to run validation base on (Validator package)[https://www.npmjs.com/package/validator]
-   7. Provide shortcut methods in Model as in static methods, as in you have only one database to work with.
+   7. Provide multiple styles to access database.
 
 ## Installation
 
