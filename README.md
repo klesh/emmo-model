@@ -216,7 +216,7 @@ check out `Session` to know more about operation methods
 
 ## Documentation
 
-check [emmo-model](http://emmo-model.github.io) for more document.
+check [emmo-model](http://klesh.github.io/emmo-model/) for more document.
 
 ## Utils
 
