@@ -1,0 +1,31 @@
+{
+  "User": {
+    "tableName": "Users",
+    "properties": {
+      "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true, "desc": false },
+      "nick": { "columnName": "account", "type": "string", "length": 50, "unique": true, "allowNull": false },
+      "password": { "type": "string", "isLength": [ { "min":7, "max": 20 } ] },
+      "passwordHash": { "columnName": "passwordHash", "type": "string", "length": 50, "input": false },
+      "isAdmin": { "columnName": "isAdmin", "type": "bool" },
+      "email": { "columnName": "email", "type": "string", "length": 100, "validate": { "isEmail": true }},
+      "departmentId": { "columnName": "DepartmentId", "type": "int", "refer": "Department", "onDelete": "SET NULL" }
+    }
+  },
+  "Relation": {
+    "tableName": "Relations",
+    "properties": {
+      "userId": { "columnName": "userId", "type": "int", "primaryKey": true, "refer": "User", "referName": true, "allowNull": false, "onDelete": "CASCADE" },
+      "relativeId": { "columnName": "relativeId", "type": "int", "primaryKey": true, "refer": "User", "referName": "FK_User_Relations_relativeId", "allowNull": false, "onDelete": "CASCADE" }
+    }
+  },
+  "RelationHistory": {
+    "tableName": "RelationHistories",
+    "properties": {
+      "id": { "columnName": "id", "type": "bigint", "primaryKey": true, "autoIncrement": true },
+      "userId": { "columnName": "userId", "type": "int", "refer": "Relation", "allowNull": false, "onDelete": "CASCADE" },
+      "relativeId": { "columnName": "relativeId", "type": "int", "refer": "Relation", "allowNull": false, "onDelete": "CASCADE" },
+      "description": { "columnName": "description", "type": "string" },
+      "startedAt": { "columnName": "startedAt", "type": "timestamptz" }
+    }
+  }
+}

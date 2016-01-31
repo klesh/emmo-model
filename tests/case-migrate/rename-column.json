@@ -3,10 +3,10 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },
@@ -23,10 +23,10 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "autoIncrement": true },
-        "title": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "autoIncrement": true },
+        "title": { "columnName": "title", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },

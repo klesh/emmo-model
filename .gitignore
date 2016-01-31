@@ -35,3 +35,4 @@ node_modules
 /out
 /trials
 /initial-debug.sql
+.DS_Store

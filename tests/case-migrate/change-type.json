@@ -3,11 +3,11 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true },
-        "permission": { "type": "jsonb" }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true },
+        "permission": { "columnName": "permission", "type": "jsonb" }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },
@@ -24,11 +24,11 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true },
-        "permission": { "type": "string" }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true },
+        "permission": { "columnName": "permission", "type": "string" }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },

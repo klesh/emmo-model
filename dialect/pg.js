@@ -9,6 +9,10 @@ Promise2.promisifyAll(pg);
 _.merge(module.exports, base, {
   defaultDatabase: 'postgres',
   autoIncrement: '',
+  stringConcatenate: '||',
+  databaseExists: function(database) {
+    return "SELECT 1 from pg_database WHERE datname='" + this.quoteString(database) + "'";
+  },
   placehold: function(index) {
     return '$' + (index * 1 + 1);
   },
@@ -38,7 +42,7 @@ _.merge(module.exports, base, {
     return connection.queryAsync(sqlScript, sqlParams);
   },
   // dispose all pooled connection
-  close: function() {
+  dispose: function() {
     return pg.end();
   }
 });

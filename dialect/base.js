@@ -1,5 +1,9 @@
+"use strict";
+/* jshint node: true */
+
 var util = require('util');
 var _ = require('lodash');
+var moment = require('moment');
 
 /**
  * This provoides common methods used for dialect implementation,
@@ -83,18 +87,22 @@ var DialectAgent = {
    *
    * @param {string} text
    * @returns {string}
-   */
   quoteString: function(text) {
     if (text === null || text === undefined) return 'NULL';
     if (text === '') return '';
     return util.format("'%s'", text.replace(/'/g, "''"));
   },
+   */
 
-  /* escape text constant
-  escape: function(text) {
-    return text.replace(/'/g, "''");
+  /**
+   * convert date string to moment
+   *
+   * @param {string}    text        which returned by database
+   * @param {Property}  proeprty    property definition
+   */
+  convertDate: function(text, property) {
+    return moment(text, 'ISO8601');
   },
-  */
   
   /**
    * quote and join column names, like ['col1', 'col2'] to  "col1", "col2"
@@ -149,7 +157,7 @@ var DialectAgent = {
     var self = this;
     var script = [];
     _.forOwn(columnsDef, function(columnDef, columnName) {
-      script.push(util.format('  %s %s', self.quote(columnName), self.column(columnDef)));
+      script.push(util.format('  %s %s', self.quote(columnDef.columnName), self.column(columnDef)));
     });
     return script.join(',\n');
   },
@@ -196,7 +204,7 @@ var DialectAgent = {
   createModel: function(modelDef) {
     var script = [];
     script.push(this.createTable(modelDef.tableName, modelDef.columns));
-    script.push(this.createPrimaryKeys(modelDef.tableName, modelDef.primaryKeys));
+    script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey));
     _.forEach(modelDef.indexes, function(indexInfo) {
       script.push(this.createIndex(modelDef.tableName, indexInfo));
     }, this);
@@ -264,7 +272,7 @@ var DialectAgent = {
                       this.quote(columnName),
                       columnDef.allowNull ? 'DROP NOT NULL' : 'SET NOT NULL') + this.separator;
   },
-  createPrimaryKeys: function(tableName, primaryKeysInfo) {
+  createPrimaryKey: function(tableName, primaryKeysInfo) {
     return util.format('ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)',
                       this.quote(tableName),
                       this.quote(primaryKeysInfo.name),
@@ -296,7 +304,7 @@ var DialectAgent = {
                              this.quote(foreignKeyInfo.name),
                              this.joinColumns(foreignKeyInfo.columns),
                              this.quote(referTableInfo.tableName),
-                             this.joinColumns(referTableInfo.primaryKeys.columns))];
+                             this.joinColumns(referTableInfo.primaryKey.columns))];
 
     if (foreignKeyInfo.onDelete)
       script.push(util.format('ON DELETE %s', foreignKeyInfo.onDelete));
@@ -320,6 +328,16 @@ var DialectAgent = {
   // all functions will be attached to EmmolaModel instance.
   functions: {
     /**
+     * refer to a table/column/alias
+     *
+     * @param {string} resource  
+     */
+    o: function(resource) {
+      return function(builder) {
+        return builder.quote(resource);
+      };
+    },
+    /**
      * sql count function
      * 
      * @param {string|number}  [column]
@@ -332,8 +350,11 @@ var DialectAgent = {
       if (!isNaN(tmp)) // column is a number
         return util.format('COUNT(%d)', tmp);
 
-      if (column)
-        return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', this.quote(column));
+      if (column) {
+        return function(builder) {
+          return util.format(distinct ? 'COUNT(DISTINCT %s)' : 'COUNT(%s)', builder.quote(column));
+        };
+      }
 
       return 'COUNT(*)';
     },
@@ -345,7 +366,9 @@ var DialectAgent = {
      * @returns {string}
      */
     distinct: function(column) {
-      return util.format('DISTINCT %s', this.quote(column));
+      return function(builder) {
+        return 'DISTINCT ' + builder.quote(column);
+      };
     },
 
     /**
@@ -355,7 +378,9 @@ var DialectAgent = {
      * @returns {string}
      */
     avg: function(column) {
-      return util.format('AVG(%s)', this.quote(column));
+      return function(builder) {
+        return 'AVG(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -365,7 +390,9 @@ var DialectAgent = {
      * @returns {string}
      */
     first: function(column) {
-      return util.format('FIRST(%s)', this.quote(column));
+      return function(builder) {
+        return 'FIRST(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -375,7 +402,9 @@ var DialectAgent = {
      * @returns {string}
      */
     last: function(column) {
-      return util.format('LAST(%s)', this.quote(column));
+      return function(builder) {
+        return 'LAST(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -385,7 +414,9 @@ var DialectAgent = {
      * @returns {string}
      */
     max: function(column) {
-      return util.format('MAX(%s)', this.quote(column));
+      return function(builder) {
+        return 'MAX(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -395,7 +426,9 @@ var DialectAgent = {
      * @returns {string}
      */
     min: function(column) {
-      return util.format('MIN(%s)', this.quote(column));
+      return function(builder) {
+        return 'MIN(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -405,7 +438,9 @@ var DialectAgent = {
      * @returns {string}
      */
     sum: function(column) {
-      return util.format('SUM(%s)', this.quote(p1));
+      return function(builder) {
+        return 'SUM(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -415,7 +450,9 @@ var DialectAgent = {
      * @returns {string}
      */
     ucase: function(column) {
-      return util.format('UCASE(%s)', this.quote(column));
+      return function(builder) {
+        return 'UCASE(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -425,7 +462,9 @@ var DialectAgent = {
      * @returns {string}
      */
     lcase: function(column) {
-      return util.format('LCASE(%s)', this.quote(column));
+      return function(builder) {
+        return 'LCASE(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -437,7 +476,9 @@ var DialectAgent = {
      * @returns {string}
      */
     mid: function(column, start, length) {
-      return util.format(length ? "MID(%s, %d, %d)" : "MID(%s, %d)", this.quote(column), start, length);
+      return function(builder) {
+        return util.format(length ? "MID(%s, %d, %d)" : "MID(%s, %d)", builder.quote(column), start, length);
+      };
     },
 
     /**
@@ -447,7 +488,9 @@ var DialectAgent = {
      * @returns {string}
      */
     len: function(column) {
-      return util.format('LEN(%s)', this.quote(column));
+      return function(builder) {
+        return 'LEN(' + builder.quote(column) + ')';
+      };
     },
 
     /**
@@ -457,7 +500,9 @@ var DialectAgent = {
      * @returns {string}
      */
     round: function(column, precision) {
-      return util.format('ROUND(%s, %d)', this.quote(column), precision);
+      return function(builder) {
+        return 'ROUND(' + builder.quote(column) + ', ' + precision + ')';
+      };
     },
 
     /**
@@ -471,36 +516,31 @@ var DialectAgent = {
     /**
      * sql format function
      *
-     * @param {string} column
+     * @param {string} resouce
      * @param {string} format
      * @returns {string}
      */
-    format: function(column, format) {
-      return util.format('FORMAT(%s, %s)', this.quote(column), this.quoteString(format));
-    },
+    format: function(resource, format) {
+      return function(builder) {
+        return 'FORMAT(' + builder.quote(resource) + ',' + builder.value(format) + ')';
+      };
+    }
+  },
 
-    /**
-     * represent refering a table/column/alias instead of plain value.
-     *
-     * @param {string} name
-     * @returns {string}
-     */
-    o: function(name) {
-      return this.quote(name);
-    },
+  comparators: {
 
-    // here are some operator
+    // here are some operator, use this.functions.FUNCNAME if you need to reuse other functions.
 
     /**
      * @param {string} str  text to search
      * @param {string} pos  'start', 'end', 'any'(default)
      * @returns {function}
      */
-    like: function(str, type) {
-      return function(agent, values) {
-        var sql = "LIKE " + agent.placehold(values.length);
+    like: function like(str, type) {
+      return function(builder) {
+        var esc = '';
         if (str.indexOf('%') >= 0) {
-          sql += "ESCAPE '\\'";
+          esc = " ESCAPE '\\'";
           str = str.replace(/%/g, '\\%');
         }
         if (type === 'start')
@@ -509,6 +549,7 @@ var DialectAgent = {
           str = '%' + str;
         else
           str = '%' + str + '%';
+        return ' LIKE ' + builder.value(str) + esc;
       };
     },
     
@@ -529,12 +570,51 @@ var DialectAgent = {
     },
 
     /**
+     * @param {array} array
+     * @returns {function}
+     */
+    in: function(array) {
+      array = arguments.length > 1 ? _.toArray(arguments) : array;
+      return function(builder) {
+        var sql = ' IN (';
+        for (var i = 0, j = array.length; i < j; i++) {
+          if (i > 0) sql += ',';
+          sql += builder.value(array[i]);
+        }
+        return sql + ')';
+      };
+    },
+
+    /**
+     * @param {null|Expression} value
+     * @returns {function}
+     */
+    not: function(value) {
+      return function(builder) {
+        if (value === null)
+          return ' IS NOT NULL';
+        var sql = ' NOT';
+        // NOT operator is special!
+        return sql + builder.element(value);
+      };
+    },
+
+    /**
+     * @param {any} value
+     * @returns {function}
+     */
+    neq: function(value) {
+      return function(builder) {
+        return '<>' + builder.element(value);
+      };
+    },
+    /**
      * @param {any} value
      * @returns {function}
      */
     gt: function(value) {
-      return function(process) {
-        return '>' + process(value);
+      return function(builder) {
+        return '>' + builder.element(value);
       };
     },
 
@@ -543,8 +623,8 @@ var DialectAgent = {
      * @returns {function}
      */
     lt: function(value) {
-      return function(process) {
-        return '<' + process(value);
+      return function(builder) {
+        return '<' + builder.element(value);
       };
     },
 
@@ -553,8 +633,8 @@ var DialectAgent = {
      * @returns {function}
      */
     gte: function(value) {
-      return function(process) {
-        return '>=' + process(value);
+      return function(builder) {
+        return '>=' + builder.element(value);
       };
     },
 
@@ -563,8 +643,8 @@ var DialectAgent = {
      * @returns {function}
      */
     lte: function(value) {
-      return function(process) {
-        return '<=' + process(value);
+      return function(builder) {
+        return '<=' + builder.element(value);
       };
     },
 
@@ -576,21 +656,8 @@ var DialectAgent = {
      * @returns {function}
      */
     between: function(start, end) {
-      return function(process) {
-        return ' BETWEEN ' + process(start) + ' AND ' + process(end);
-      };
-    },
-
-    /**
-     * add operator
-     *
-     * @param {...any} arguments
-     * @returns {function}
-     */
-    add: function() {
-      var args = arguments;
-      return function(process) {
-        return _.map(args, function(arg) { return process(arg); }).join('+');
+      return function(builder) {
+        return ' BETWEEN ' + builder.element(start) + ' AND ' + builder.element(end);
       };
     }
   }

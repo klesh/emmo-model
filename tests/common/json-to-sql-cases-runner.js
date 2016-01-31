@@ -1,17 +1,17 @@
 var fs = require('fs');
 var path = require('path');
-var Promise = require('bluebird');
+var P = require('bluebird');
 var pg = require('pg');
 var should = require('should');
 var util = require('util');
 var _ = require('lodash');
 var colors = require('colors');
 
-Promise.promisifyAll(pg);
-Promise.longStackTraces();
+P.promisifyAll(pg);
+P.longStackTraces();
   
 var jsonPatt = /.json$/;
-var connectionString = '/var/run/postgresql %s';
+var connectionString = process.env.PGCONNECT || '/var/run/postgresql %s';
 var baseName = process.argv[2];
 
 var getConnectionString = function(database) {
@@ -21,7 +21,7 @@ var getConnectionString = function(database) {
 
 var readline = function(prompt) {
   console.log(prompt);
-  return new Promise(function(resolve, reject) {
+  return new P(function(resolve, reject) {
     process.stdin.resume();
     process.stdin.on('data', function(data) {
       process.stdin.pause();
@@ -38,7 +38,7 @@ var generateResult = function(casesDirPath, getScript, initScript) {
       return jsonPatt.test(f); 
     });
 
-    var chain = Promise.resolve();
+    var chain = P.resolve();
 
     _.forEach(fileNames, function(fileName) {
       chain = chain.then(function() {
@@ -54,7 +54,7 @@ var generateResult = function(casesDirPath, getScript, initScript) {
               .then(function() { return client.queryAsync('CREATE DATABASE sql_gen_test;'); })
               .then(release)
               .then(function() {
-                return new Promise(function(resolve, reject) {
+                return new P(function(resolve, reject) {
                   var client2 = new pg.Client(getConnectionString('sql_gen_test'));
                   client2.connect(function(err) {
                     if (err)
@@ -70,7 +70,7 @@ var generateResult = function(casesDirPath, getScript, initScript) {
                   console.log(init.grey);
                   promise = client2.queryAsync(init);
                 } else {
-                  promise = Promise.resolve();
+                  promise = P.resolve();
                 }
                 return promise.then(function() {
                   console.log(script);

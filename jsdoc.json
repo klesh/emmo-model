@@ -1,0 +1,14 @@
+{
+  "source": {
+    "include": [ "./index.js", "./lib/model.js", "./lib/expression.js", "./lib/session.js", "./README.md" ]
+  },
+  "templates": {
+    "default": {
+      "layoutFile": "./tpl/layout.tmpl"
+    }
+  },
+  "plugins": ["plugins/markdown"],
+  "opts": {
+    "destination": "../klesh.github.io/emmo-model/"
+  }
+}

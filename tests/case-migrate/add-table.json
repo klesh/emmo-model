@@ -3,10 +3,10 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },
@@ -24,10 +24,10 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },
@@ -42,11 +42,11 @@
     "User": {
       "tableName": "Users",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "nick": { "type": "string", "length": 50, "unique": true },
-        "roleId": { "type": "int", "refer": "Role" }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "nick": { "columnName": "nick", "type": "string", "length": 50, "unique": true },
+        "roleId": { "columnName": "roleId", "type": "int", "refer": "Role" }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Users",
         "columns": [ "id" ]
       },

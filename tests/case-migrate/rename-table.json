@@ -3,10 +3,10 @@
     "Smoke": {
       "tableName": "Smokes",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "title": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "title": { "columnName": "title", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Smokes",
         "columns": [ "id" ]
       },
@@ -20,10 +20,10 @@
     "Role": {
       "tableName": "Roles",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Roles",
         "columns": [ "id" ]
       },
@@ -40,10 +40,10 @@
     "Group": {
       "tableName": "Groups",
       "columns": {
-        "id": { "type": "int", "primaryKey": true, "autoIncrement": true },
-        "name": { "type": "string", "length": 50, "unique": true }
+        "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+        "name": { "columnName": "name", "type": "string", "length": 50, "unique": true }
       },
-      "primaryKeys": {
+      "primaryKey": {
         "name": "PK_Groups",
         "columns": [ "id" ]
       },

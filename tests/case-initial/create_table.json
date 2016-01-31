@@ -1,0 +1,52 @@
+{
+  "Department": {
+    "tableName": "Departments",
+    "columns": {
+      "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+      "title": { "columnName": "title", "type": "string", "length": 50, "allowNull": false },
+      "remark": { "columnName": "remark", "type": "string" }
+    },
+    "primaryKey": {
+      "name": "PK_Departments",
+      "columns": ["id"]
+    }
+  },
+  "Role": {
+    "tableName": "Roles",
+    "columns": {
+      "title": { "columnName": "name", "type": "string", "length": 50, "allowNull": false, "primaryKey": true }
+    },
+    "primaryKey": {
+      "name": "PK_Roles",
+      "columns": ["name"]
+    }
+  },
+  "User": {
+    "tableName": "Users",
+    "columns": {
+      "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
+      "nick": { "columnName": "name", "type": "string", "length": 50, "allowNull": false },
+      "password": { "columnName": "password", "type": "string", "length": 40 },
+      "departmentId": { "columnName": "departmentId", "type": "int" }
+    },
+    "primaryKey": {
+      "name": "PK_Users",
+      "columns": ["id"]
+    },
+    "indexes": [
+      {
+        "name": "IX_Users_nick",
+        "columns": { "name": "ASC" },
+        "unique": true
+      }
+    ],
+    "foreignKeys": [
+      {
+        "name": "FK_Users_Departments",
+        "columns": ["departmentId"],
+        "refer": "Department",
+        "onDelete": "SET NULL"
+      }
+    ]
+  }
+}

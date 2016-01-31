@@ -3,6 +3,5 @@
   "migrationsPath": "migrations",
   "dialect": "pg",
   "connectionString": "/var/run/postgresql %s",
-  "database": "emtest",
-  "autoTrim": true
+  "database": "emtest"
 }

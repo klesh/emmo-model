@@ -3,36 +3,37 @@
     "tableName": "Users",
     "columns": {
       "id": {
+        "columnName": "id",
         "type": "int",
         "primaryKey": true,
-        "autoIncrement": true,
-        "desc": false,
-        "allowNull": true
+        "autoIncrement": true
       },
       "nick": {
+        "columnName": "account",
         "type": "string",
         "length": 50,
-        "allowNull": false,
-        "desc": true
+        "allowNull": false
+      },
+      "passwordHash": {
+        "columnName": "passwordHash",
+        "type": "string",
+        "length": 50
       },
       "isAdmin": {
-        "type": "bool",
-        "allowNull": true,
-        "desc": true
+        "columnName": "isAdmin",
+        "type": "bool"
       },
       "email": {
+        "columnName": "email",
         "type": "string",
-        "length": 100,
-        "allowNull": true,
-        "desc": true
+        "length": 100
       },
       "departmentId": {
-        "type": "int",
-        "allowNull": true,
-        "desc": true
+        "columnName": "departmentId",
+        "type": "int"
       }
     },
-    "primaryKeys": {
+    "primaryKey": {
       "name": "PK_Users",
       "columns": [
         "id"
@@ -40,10 +41,10 @@
     },
     "indexes": [
       {
-        "name": "IX_Users_nick",
+        "name": "IX_Users_account",
         "unique": true,
         "columns": {
-          "nick": "DESC"
+          "account": "ASC"
         }
       }
     ],
@@ -62,19 +63,19 @@
     "tableName": "Relations",
     "columns": {
       "userId": {
+        "columnName": "userId",
         "type": "int",
         "primaryKey": true,
-        "allowNull": false,
-        "desc": true
+        "allowNull": false
       },
       "relativeId": {
+        "columnName": "relativeId",
         "type": "int",
         "primaryKey": true,
-        "allowNull": false,
-        "desc": true
+        "allowNull": false
       }
     },
-    "primaryKeys": {
+    "primaryKey": {
       "name": "PK_Relations",
       "columns": [
         "userId",
@@ -105,34 +106,31 @@
     "tableName": "RelationHistories",
     "columns": {
       "id": {
+        "columnName": "id",
         "type": "bigint",
         "primaryKey": true,
-        "autoIncrement": true,
-        "allowNull": true,
-        "desc": true
+        "autoIncrement": true
       },
       "userId": {
+        "columnName": "userId",
         "type": "int",
-        "allowNull": false,
-        "desc": true
+        "allowNull": false
       },
       "relativeId": {
+        "columnName": "relativeId",
         "type": "int",
-        "allowNull": false,
-        "desc": true
+        "allowNull": false
       },
       "description": {
-        "type": "string",
-        "allowNull": true,
-        "desc": true
+        "columnName": "description",
+        "type": "string"
       },
       "startedAt": {
-        "type": "timestamptz",
-        "allowNull": true,
-        "desc": true
+        "columnName": "startedAt",
+        "type": "timestamptz"
       }
     },
-    "primaryKeys": {
+    "primaryKey": {
       "name": "PK_RelationHistories",
       "columns": [
         "id"

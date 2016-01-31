@@ -11,31 +11,41 @@ var Department = require('./models/department.js');
 var jsonPath = path.resolve('./em.json');
 var database;
 
-describe('EmmoModel', function() {
+describe('EmmoModel Test', function() {
   before('sync', function() {
     this.timeout(10 * 1000);
+
+    // create config file
     var json = require('../tpl/em.json');
-    json.modelsPath = 'test/models';
-    json.migrationsPath = 'test/migrations';
+    json.modelsPath = 'tests/models';
+    json.migrationsPath = 'tests/migrations';
     if (process.env.PGCONNECT) {
       json.connectionString = process.env.PGCONNECT;
     }
     fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2));
     database = json.database;
     if (!database) throw new Error('database can not be empty in tpl/em.json');
+
+    // bootstrap em
     em.init();
+
+    // remove all test database if exists
     return Promise2.all(_.map([ database, 'emtest1' ], function(name) {
       return em.remove(name);
     })).finally(function() {
-      var readyTriggered = false;
+      var readyTriggered = false, createdTriggered;
       em.once('ready', function() {
         readyTriggered = true;
+      });
+      em.once('created', function() {
+        createdTriggered = true;
       });
       return em.sync().then(function() {
         should(readJson().all).be.deepEqual([ database ]);
         should(readyTriggered).be.true();
         return em.create('emtest1');
       }).then(function() {
+        should(createdTriggered).be.true();
         should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
       });
     });
@@ -77,34 +87,41 @@ describe('EmmoModel', function() {
     });
   });
 
-  it('save -> insert', function() {
-    return User.save({ nick: 'sitest' }).then(function() {
-      return User.find({ nick: 'sitest' });
+  it('refresh', function() {
+    var userId;
+    return User.insert({ nick: 'refresh-test' }).then(function(user) {
+      return User.find(user.id);
     }).then(function(user) {
-      should(user).be.ok();
-    });
-  }); 
-
-  it('save -> update', function() {
-    return User.insert({ nick: 'sutest', age: 13 }).then(function(user) {
-      should(user.id).be.ok();
-      return User.save({ nick: 'sutest2', age: em.o('age').plus(5), id: user.id }).thenReturn(user.id);
-    }).then(function(userId) {
+      should(user.updatedAt).not.be.ok();
+      userId = user.id;
+      return User.refresh({ nick: 'refresh-test', id: userId });
+    }).then(function(user) {
       return User.find(userId);
     }).then(function(user) {
-      should(user.nick).be.exactly('sutest2');
-      should(user.age).be.exactly(18);
+      should(user.updatedAt).not.be.ok();
+      return User.refresh({ id: user.id, age: 22 });
+    }).then(function() {
+      return User.find(userId);
+    }).then(function(user) {
+      should(user.updatedAt).be.ok();
     });
   });
 
-  it('cell', function() {
-    return User.insert({ nick: 'ctest' }).then(function(user) {
-      should(user.id).be.ok();
-      return User.cell('nick', 'ctest2', user.id).thenReturn(user.id);
-    }).then(function(userId) {
-      return User.find(userId);
-    }).then(function(user) {
-      should(user.nick).be.exactly('ctest2');
+  it('like', function() {
+    return Promise2.each([
+      { nick: 'like1like' },
+      { nick: 'like2like' },
+      { nick: 'like3like' }
+    ], User.insert.bind(User)).then(function() {
+      return User.count({ nick: em.startsWith('like1') });
+    }).then(function(count) {
+      should(count).be.exactly(1);
+      return User.count({ nick: em.like('1like', 'end') });
+    }).then(function(count) {
+      should(count).be.exactly(1);
+      return User.count({ nick: em.like('like') });
+    }).then(function(count) {
+      should(count).be.exactly(3);
     });
   });
 
@@ -136,7 +153,7 @@ describe('EmmoModel', function() {
       });
   });
 
-  it('or and in', function() {
+  it('or/in/not', function() {
     return Promise2.each([
       { nick: 'OR1' },
       { nick: 'OR2' }
@@ -149,6 +166,10 @@ describe('EmmoModel', function() {
       return User.all({ where: { nick: [ 'OR1', 'OR2' ] } });
     }).then(function(users) {
       should(users.length).be.exactly(2);
+      return User.all({ where: { nick: em.not(em.in('OR1', 'OR2')) } });
+    }).then(function(users) {
+      should(_.find(users, 'nick', 'OR1')).not.be.ok();
+      should(_.find(users, 'nick', 'OR2')).not.be.ok();
     });
   });
 
@@ -182,7 +203,7 @@ describe('EmmoModel', function() {
     });
   });
 
-  it('groupby having', function() {
+  it('join groupby having', function() {
     var deptId;
     return em.scope(function(db) {
       return db.insert('Department', { title: 'grouptest' })
@@ -203,6 +224,9 @@ describe('EmmoModel', function() {
       });
     }).then(function(rs) {
       should(rs).be.exactly(deptId);
+      return User.all({ join: 'Department', where: { 'Department.title': 'grouptest' } });
+    }).then(function(users) {
+      should(users.length).be.exactly(4);
     });
   });
 });
