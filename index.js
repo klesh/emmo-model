@@ -149,27 +149,30 @@ EmmoModel.prototype.define = function(name, properties, tableName) {
       property.validators = [];
 
     if (property.autoIncrement) {
-      property.validators.push(function(value) {
+      property.validators.push(function autoIncrement(value) {
         return V.isInt(value) && value > 0;
       });
     } else {
       if (property.length > 0) {
-        property.validators.push(function(value) {
+        property.validators.push(function length(value) {
           return value.length <= property.length;
         });
       }
-
+      
       _.each(_.intersection(allValidators, _.keys(property)), function(validatorName) {
         var parameter = property[validatorName];
+        var validator;
         if (parameter === true) {
-          property.validators.push(function(value) {
+          validator = function(value) {
             return V[validatorName](value);
-          });
+          };
         } else {
-          property.validators.push(function(value) {
+          validator = function(value) {
             return V[validatorName](value, parameter);
-          });
+          };
         }
+        validator.reason = validatorName;
+        property.validators.push(validator);
       });
     }
 
@@ -236,7 +239,7 @@ EmmoModel.prototype.init = function(options) {
     this.configPath = options;
     this.config = require(this.configPath);
   } else {
-    this.config = {};
+    this.config = options;
   }
 
   _.defaults(this.config, {
@@ -397,6 +400,11 @@ EmmoModel.prototype.updateConfig = function(action, database) {
 EmmoModel.prototype.create = function(database) {
   this.init();
   var self = this, agent = this.agent;
+  const debug = './initial-debug.sql';
+
+  if (fs.existsSync(debug))
+    fs.unlinkSync(debug);
+
   return self.scope(agent.defaultDatabase, function(db) {
     // step 1:  connect to server default database, run CREATE DATABASE statement
     return db.query(self.agent.createDatabase(database)).error(function(err) {
@@ -413,7 +421,7 @@ EmmoModel.prototype.create = function(database) {
       });
     }).error(function(err) {
       // seems thing went south, create a debug file, as generated SQL Script along with ERROR information.
-      fs.writeFileSync('./initial-debug.sql', migrator.getInitialSQL() + _.repeat('\n', 10) + util.inspect(err));
+      fs.writeFileSync(debug, migrator.getInitialSQL() + _.repeat('\n', 10) + util.inspect(err));
       // then remove useless database so that we can re-created it next time.
       return self.remove(database).finally(function() {
         return P.reject(new Error('An error ocurred during initialation, may causued by wrong model definition, check initial-debug.sql in your project folder'));
@@ -509,15 +517,15 @@ EmmoModel.prototype.sync = function(databases) {
 EmmoModel.prototype.dropCreate = function() {
   this.init();
   var self = this;
-  return self.remove(self.database).finally(function() {
-    return self.create(self.database);
+  return self.remove(self.config.database).finally(function() {
+    return self.create(self.config.database);
   });
 };
 
 /**
  * export a ready to use instance, you can spawn a new Instance
  */
-module.exports = new EmmoModel();
+var em = module.exports = new EmmoModel();
 
 /**
  * create new EmmoModel instance
@@ -527,7 +535,7 @@ module.exports = new EmmoModel();
  * var server2 = require('emmo-model').new();
  * server2.init(...);
  */
-module.exports.new = function() {
+em.new = function() {
   return new EmmoModel();
 };
 
@@ -541,7 +549,7 @@ module.exports.new = function() {
  *
  * app.get('/api/users/:id', em.mount(req => User.find(req.params.id)));
  */
-module.exports.mount = function(handler) {
+em.mount = function(handler) {
   return function(req, res, next) {
     var promise = handler(req, res, next);
     if (!_.isFunction(promise.then))
@@ -556,4 +564,40 @@ module.exports.mount = function(handler) {
       throw err;
     });
   };
+};
+
+
+/**
+ * @typedef ModelErrorInfo
+ * @type {object}
+ * @property {string}   entityName
+ * @property {Entity}   entity
+ * @property {string}   propertyName
+ * @property {Property} property
+ * @property {string}   reason
+ */
+/**
+ * Create a error for Model convertion/validation, replace this to customize your error instance
+ *
+ * @callback Model~newErr
+ * @param {string}          code        error code
+ * @param {ModelErrorInfo}  [info]      validator name/relevant definition/customize validator function name
+ */
+em.newModelErr = function(code, info) {
+  var message;
+  switch (code) {
+    case 'E_DATA_EMPTY':
+      message = 'Input data can not be a empty object';
+      break;
+    case 'E_TYPE_ERROR':
+      message = 'Illegal input value for ' + info.entityName + '.' + info.propertyName;
+      break;
+    case 'E_VALIDATION_FAIL':
+      message = info.property.message || 'Validation fail for ' + info.entityName + '.' + info.propertyName;
+      break;
+  }
+  var error = new Error(message);
+  error.code = code;
+  error.description = message;
+  return error;
 };

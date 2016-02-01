@@ -1,11 +1,11 @@
-var EM = require('../index.js');
+var em = require('../index.js');
 var should = require('should');
 var shouldPromised = require('should-promised');
 var path = require('path');
 var Promise2 = require('bluebird');
 
 describe('Model test', function() {
-  var em = EM.new();
+  //var em = EM.new();
 
   before(function() {
     em.init({
@@ -36,13 +36,23 @@ describe('Model test', function() {
     return new User({ age: 22 }).validate('insert').should.be.rejectedWith({ code: 'E_DATA_EMPTY' });
   });
 
+  it('insert validate', function() {
+    var User = em.define('User', {
+      id: { type: 'int', autoIncrement: true, primaryKey: true },
+      nick: { type: 'string', length: 50 }
+    });
+
+    var user = new User({ nick: 'a very long nick' });
+    return user.validate('insert').should.be.fulfilled();
+  });
+
   it('update validate', function() {
     var User = em.define('User', {
       id: { type: 'int', autoIncrement: true, primaryKey: true },
       nick: { type: 'string' }
     });
 
-    return new User({ nick: 'abc' }).validate('update').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL', property: 'id' });
+    return new User({ nick: 'abc' }).validate('update').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL' });
   });
   
   it('length', function() {
@@ -52,7 +62,7 @@ describe('Model test', function() {
     });
 
     var user = new User({ nick: 'a very long nick' });
-    return user.validate('insert').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL',  property: 'nick' });
+    return user.validate('insert').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL' });
   });
   
   it('isLength', function() {
@@ -62,7 +72,7 @@ describe('Model test', function() {
     });
 
     var user = new User({ nick: 'a' });
-    return user.validate('insert').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL',  property: 'nick' });
+    return user.validate('insert').should.be.rejectedWith({ code: 'E_VALIDATION_FAIL' });
   });
 
   it('number type', function() {
@@ -75,7 +85,6 @@ describe('Model test', function() {
       User.assign({}, { age: 'fifty' });
     }, function(err) {
       should(err.code).be.exactly('E_TYPE_ERROR');
-      should(err.property).be.exactly('age');
       return true;
     });
 
@@ -93,7 +102,6 @@ describe('Model test', function() {
       User.assign({}, { createdAt: 'fifty' });
     }, function(err) {
       should(err.code).be.exactly('E_TYPE_ERROR');
-      should(err.property).be.exactly('createdAt');
       return true;
     });
     
@@ -107,7 +115,7 @@ describe('Model test', function() {
       email: { type: 'string', length: 50, isEmail: true, message: message}
     });
     
-    return new User({ email: 'abc' }).validate('insert').should.be.rejectedWith({ property: 'email', description: message });
+    return new User({ email: 'abc' }).validate('insert').should.be.rejectedWith({ description: message });
   });
 
   it('matches', function() {
@@ -116,6 +124,6 @@ describe('Model test', function() {
       nick: { type: 'string', length: 50, matches: /^\w{5,8}$/, description: 'Nick should be consist by 5~8 letters' }
     });
     var user = new User({ nick: 'abcdefghijkl,n' });
-    return user.validate('insert').should.be.rejectedWith({ property: 'nick' });
+    return user.validate('insert').should.be.rejected();
   });
 });

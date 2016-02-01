@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var em = require('../index.js');
-var Promise2 = require('bluebird');
+var P = require('bluebird');
 var _ = require('lodash');
 var should = require('should');
 var User = require('./models/user.js');
@@ -30,7 +30,7 @@ describe('EmmoModel Test', function() {
     em.init();
 
     // remove all test database if exists
-    return Promise2.all(_.map([ database, 'emtest1' ], function(name) {
+    return P.all(_.map([ database, 'emtest1' ], function(name) {
       return em.remove(name);
     })).finally(function() {
       var readyTriggered = false, createdTriggered;
@@ -108,7 +108,7 @@ describe('EmmoModel Test', function() {
   });
 
   it('like', function() {
-    return Promise2.each([
+    return P.each([
       { nick: 'like1like' },
       { nick: 'like2like' },
       { nick: 'like3like' }
@@ -126,7 +126,7 @@ describe('EmmoModel Test', function() {
   });
 
   it('all/paginate', function() {
-    return Promise2.each([
+    return P.each([
         { name: 'Role1' },
         { name: 'Role2' },
         { name: 'Role3' },
@@ -154,7 +154,7 @@ describe('EmmoModel Test', function() {
   });
 
   it('or/in/not', function() {
-    return Promise2.each([
+    return P.each([
       { nick: 'OR1' },
       { nick: 'OR2' }
     ], function(user) {
@@ -190,10 +190,24 @@ describe('EmmoModel Test', function() {
       should(total * 1).be.Number();
     });
   });
+
+  it('array', function() {
+    return P.resolve([1,2,3,4]).each(function(i) {
+      return User.insert({ nick: 'array' + i, age: 1000 });
+    }).then(function() {
+      return User.array({
+        field: 'nick',
+        where: { age: '1000' },
+        order: 'id'
+      });
+    }).then(function(nicks) {
+      should(nicks).be.deepEqual([ 'array1', 'array2', 'array3', 'array4' ]);
+    });
+  });
   
   it('avg', function() {
     return em.scope(function(db) {
-      return Promise2.each([1, 2, 3, 4], function(age) {
+      return P.each([1, 2, 3, 4], function(age) {
         return db.insert('User', { nick: 'avgtest' + age, age: age, email: 'avgtest@test.com' });
       }).then(function() {
         return db.scalar('User', { field: em.avg('age'), where: { email: 'avgtest@test.com' } });
@@ -209,7 +223,7 @@ describe('EmmoModel Test', function() {
       return db.insert('Department', { title: 'grouptest' })
       .then(function(dept) {
         deptId = dept.id;
-        return Promise2.each([1, 2, 3, 4], function(i) {
+        return P.each([1, 2, 3, 4], function(i) {
           return db.insert('User', { nick: 'ghtest' + i, departmentId: dept.id });
         });
       })
