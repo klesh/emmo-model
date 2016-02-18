@@ -591,7 +591,7 @@ var DialectAgent = {
      */
     not: function(value) {
       return function(builder) {
-        if (value === null)
+        if (value === null || value === undefined)
           return ' IS NOT NULL';
         var sql = ' NOT';
         // NOT operator is special!

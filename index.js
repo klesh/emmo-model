@@ -234,7 +234,7 @@ EmmoModel.prototype.init = function(options) {
 
   if (!options) {
     this.configPath = path.resolve('./em.json');
-    this.config = require('./em.json');
+    this.config = require(this.configPath);
   } else if (_.isString(options)) {
     this.configPath = options;
     this.config = require(this.configPath);
@@ -268,9 +268,9 @@ EmmoModel.prototype.init = function(options) {
   // make sure we are not sharing the models among multiple em inst.
   if (!this.parent) {
     // load models
-    _.each(fs.readdirSync(this.modelsPath), function(fileName) {
+    _.each(fs.readdirSync(this.config.modelsPath), function(fileName) {
       if (/\.js$/.test(fileName))
-        require(path.resolve(this.modelsPath, fileName));
+        require(path.resolve(this.config.modelsPath, fileName));
     }, this);
   }
   
@@ -553,14 +553,19 @@ em.mount = function(handler) {
   return function(req, res, next) {
     var promise = handler(req, res, next);
     if (!_.isFunction(promise.then))
-      throw new Error('Expect returning a promise instance');
+      next(new Error('Expect returning a promise instance'));
+      //throw new Error('Expect returning a promise instance');
 
     promise.then(function(result) {
-      return res.json(result || { code: 'SUCCESS' });
-    }).catch(function(err) {
+      if (!_.isObject(result)) {
+        result = { result: result };
+      }
+      res.json(result || { code: 'SUCCESS' });
+    }).error(function(err) {
       res.status(400);
       if (err.description) // valid description property indicates this is handled rejection
         return res.json(err);
+      next(err);
       throw err;
     });
   };

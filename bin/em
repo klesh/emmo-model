@@ -6,7 +6,7 @@ var moment = require('moment');
 var path = require('path');
 var fs = require('fs');
 var em = require('../index.js');
-var Sql = require('../lib/sql-generator.js');
+var Sql = require('../lib/sql.js');
 var util = require('util');
 
 var command = argv._[0];
@@ -21,17 +21,18 @@ var commanders = {
     var config = require(path.resolve('./em.json'));
     em.init(config);
     return em.scope(function(db) {
-      return db.selectOne('_Migration', {order: {uid: 'DESC'}, limit: 1});
+      return db.one('_Migration', {order: {uid: 'DESC'}, limit: 1});
     }).then(function(lastMigration) {
       var uid = moment().format('YYYYMMDDHHmmss') * 1;
       var fullName = uid + '-' + name + '.sql';
       var lastModels = JSON.parse(lastMigration.models);
+      var migrator = em.getMigrator();
       var migrateScript = [
-        Sql.migrateScript(config.dialect, lastModels, em.normalized),
+        Sql.migrateScript(config.dialect, lastModels, migrator.purified),
         util.format('INSERT INTO %s (%s) VALUES (%s)' + em.agent.separator,
                    em.agent.quote('_Migrations'),
                    ['uid', 'name', 'models'].map(em.agent.quote).join(', '),
-                   [uid, em.agent.escape(fullName), em.agent.escape(em.getNormalizedJson())].map(function(c){
+                   [uid, fullName, migrator.getModelsJSON().replace(/'/g, "''")].map(function(c){
                      return util.format("'%s'", c);
                    }))
       ].join('\n');
