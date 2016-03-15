@@ -276,6 +276,7 @@ EmmoModel.prototype.init = function(options) {
   
   // load dialect
   this.agent = require('./dialect/' + this.config.dialect + '.js');
+  this.agent.config = this.config;
 
   // copy database functions from dialect
   _.each(this.agent.functions, function(f, n) {
@@ -539,7 +540,7 @@ em.new = function() {
   return new EmmoModel();
 };
 
-
+var DEV = process.env.NODE_ENV !== 'production';
 /**
  * easy way to create RESTful api.
  *
@@ -554,7 +555,6 @@ em.mount = function(handler) {
     var promise = handler(req, res, next);
     if (!_.isFunction(promise.then))
       next(new Error('Expect returning a promise instance'));
-      //throw new Error('Expect returning a promise instance');
 
     promise.then(function(result) {
       if (!_.isObject(result)) {
@@ -562,11 +562,22 @@ em.mount = function(handler) {
       }
       res.json(result || { code: 'SUCCESS' });
     }).error(function(err) {
+      // operational error
       res.status(400);
       if (err.description) // valid description property indicates this is handled rejection
         return res.json(err);
       next(err);
-      throw err;
+    }).catch(function(err) {
+      // fatal error
+      var msg = {
+        code: err.code || err.name,
+        description: err.description || err.message
+      };
+      if (DEV)
+        msg.stack = err.stack;
+
+      res.status(500);
+      res.json(msg);
     });
   };
 };
