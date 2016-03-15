@@ -33,15 +33,34 @@ _.merge(module.exports, base, {
 
     return base.columnType(columnDef);
   },
-  // return a promise connection instance
+  
+  /**
+   * Obtain a connection from pool
+   *
+   * @type {function}
+   * @param {string} connectionString
+   * @return {Promise<Connection>}
+   */
   connect: function(connectionString) {
     return pg.connectAsync(connectionString);
   },
-  // return a query promise
+
+  /**
+   * Run database query
+   *
+   * @param {Connection}  connection
+   * @param {string}      sqlScript
+   * @param {array}       sqlParams
+   */
   query: function(connection, sqlScript, sqlParams) {
     return connection.queryAsync(sqlScript, sqlParams);
   },
-  // dispose all pooled connection
+
+  /**
+   * Dispose pools, might be needed for DROPing database
+   * 
+   * return {Promise}
+   */
   dispose: function() {
     return pg.end();
   }
