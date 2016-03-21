@@ -8,6 +8,7 @@ var fs = require('fs');
 var em = require('../index.js');
 var Sql = require('../lib/sql.js');
 var util = require('util');
+var argv = require('yargs').argv;
 
 var command = argv._[0];
 
@@ -18,7 +19,7 @@ var commanders = {
     if (!name)
       return console.log('Please assign migration name');
 
-    var config = require(path.resolve('./em.json'));
+    var config = require(path.resolve(argv.config || './em.json'));
     em.init(config);
     return em.scope(function(db) {
       return db.one('_Migration', {order: {uid: 'DESC'}, limit: 1});
