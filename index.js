@@ -356,6 +356,16 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
 };
 
 /**
+ * Perform operation for all databases
+ */
+EmmoModel.prototype.all = function(job) {
+  var self = this;
+  return P.each(this.config.all, function(database) {
+    return self.scope(database, job);
+  });
+};
+
+/**
  * lazy load migrator
  *
  * @returns {Migrator}
