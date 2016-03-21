@@ -568,27 +568,10 @@ em.mount = function(handler) {
 
     promise.then(function(result) {
       if (!_.isObject(result)) {
-        result = { result: result };
+        result = { code: 'SUCCESS', result: result };
       }
       res.json(result || { code: 'SUCCESS' });
-    }).error(function(err) {
-      // operational error
-      res.status(400);
-      if (err.description) // valid description property indicates this is handled rejection
-        return res.json(err);
-      next(err);
-    }).catch(function(err) {
-      // fatal error
-      var msg = {
-        code: err.code || err.name,
-        description: err.description || err.message
-      };
-      if (DEV)
-        msg.stack = err.stack;
-
-      res.status(500);
-      res.json(msg);
-    });
+    }).catch(next);
   };
 };
 
