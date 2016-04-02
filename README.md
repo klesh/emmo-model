@@ -206,9 +206,14 @@ Check out [emmo-model](http://klesh.github.io/emmo-model/) for more document.
 
 Enter your project folder which had emmo-model installed then you can generate migration
 
-```base
+```bash
 $ cd myproject
 $ em migrate MIGRATION_NAME
+```
+
+You can specify configuration file by --config like:
+```bash
+$ em migration MIGRATION_NAME --config em.dev.json
 ```
 
 That will create a migration sql script file smartly for you, but you can still do some 
