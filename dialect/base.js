@@ -40,6 +40,20 @@ var DialectAgent = {
   },
 
   /**
+   * Wrap Standard INSERT statement for dialect, like RETURNING id for postgres
+   */
+  wrapInsertSql: function(sql, builder) {
+    return sql;
+  },
+
+  /**
+   * Some database may need to run another query to get the last inserted id on same connection.
+   */
+  getInsertId: function(insertResult, connection) {
+    throw new Error('getInsertId need to be implemented in dialect');
+  },
+
+  /**
    * Transform SQL statement to a OFFSET/SKIP manner
    *
    * @param {string} sql

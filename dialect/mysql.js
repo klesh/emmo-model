@@ -73,10 +73,8 @@ _.merge(module.exports, base, {
    * @prama {Connection} connection
    * @return {Promise<number>}
    */
-  returnId: function(connection) {
-    return this.query(connection, "SELECT LAST_INSERT_ID()").then(function(result) {
-      return result.rows[0].lastval;
-    });
+  getInsertId: function(result) {
+    return Promise2.resolve(result.insertId);
   },
   
   /**

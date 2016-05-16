@@ -19,10 +19,13 @@ _.merge(module.exports, base, {
   quote: function(name) {
     return '"' + name + '"';
   },
-  returnId: function(connection) {
-    return this.query(connection, "SELECT LASTVAL()").then(function(result) {
-      return result.rows[0].lastval;
-    });
+  wrapInsertSql: function(sql, builder) {
+    if (builder.entity.autoIncrementName)
+      return sql + " RETURNING " + this.quote(builder.entity.autoIncrementName);
+    return sql;
+  },
+  getInsertId: function(result, builder, session) {
+    return Promise2.resolve(result[0][builder.entity.autoIncrementName]);
   },
   columnType: function(columnDef) {
     if (columnDef.autoIncrement)
