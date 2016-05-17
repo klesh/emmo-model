@@ -154,5 +154,18 @@ _.merge(module.exports, base, {
     return P.map(_.values(pools), function(pool, connectionString) {
       return pool.endAsync();
     });
+  },
+
+  createPrimaryKey: function(tableName, primaryKeysInfo, modelDef) {
+    var hasAutoIncrement = _.some(primaryKeysInfo.columns, function(columnName) {
+      return modelDef.columns[columnName].autoIncrement;
+    });
+    if (hasAutoIncrement) return '';
+    return util.format('ALTER TABLE %s ADD PRIMARY KEY (%s)',
+                      this.quote(tableName),
+                      this.joinColumns(primaryKeysInfo.columns)) + this.separator;
+  },
+  dropPrimaryKey: function(tableName, primaryKeysInfo) {
+    return util.format('ALTER TABLE %s DROP PRIMARY KEY', this.quote(tableName)) + this.separator;
   }
 });

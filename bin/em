@@ -71,10 +71,21 @@ var commanders = {
   },
   // to create or migrate database into newest state
   sync: function(argv) {
+    /*
     var config = require(path.resolve('./em.json'));
     em.init(config);
+    */
+    em.init();
     em.sync().then(function() {
       console.log('sync finish successfully');
+      process.exit(0);
+    });
+  },
+  // to dump current models definition into database, for adapting to existing database
+  rebase: function() {
+    em.init();
+    em.rebase().then(function() {
+      console.log('rebase models definition into databases finish successfully');
       process.exit(0);
     });
   }

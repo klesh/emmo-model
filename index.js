@@ -523,6 +523,26 @@ EmmoModel.prototype.sync = function(databases) {
   });
 };
 
+
+/**
+ * dump current model definition into database's last migartion for adapting to existing database
+ */
+EmmoModel.prototype.rebase = function(databases) {
+  this.init();
+  var self = this, all = this.config.all;
+  databases = databases || (all && all.length ? all : [ this.config.database ]);
+
+  return P.each(databases, function(database) {
+    var migrator = self.getMigrator();
+    return self.scope(database, function(db) {
+      return db.query(migrator.getRebaseSQL()).then(function() {
+        // insert new migration history record
+        return db.insert('_Migration', migrator.lastMigrationData());
+      });
+    });
+  });
+};
+
 /**
  * recreate ORIGIN database, useful for unit test scenario
  *

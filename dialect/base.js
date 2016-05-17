@@ -225,13 +225,11 @@ var DialectAgent = {
    */
   createModel: function(modelDef) {
     var script = [];
-    script.push(this.createTable(modelDef.tableName, modelDef.columns));
-
-    if (!this.autoPrimaryKey)
-      script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey));
+    script.push(this.createTable(modelDef.tableName, modelDef.columns, modelDef));
+    script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey, modelDef));
 
     _.forEach(modelDef.indexes, function(indexInfo) {
-      script.push(this.createIndex(modelDef.tableName, indexInfo));
+      script.push(this.createIndex(modelDef.tableName, indexInfo, modelDef));
     }, this);
     return script.join('\n');
   },
