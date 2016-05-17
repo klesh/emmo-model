@@ -419,6 +419,8 @@ EmmoModel.prototype.create = function(database) {
   return self.scope(agent.defaultDatabase, function(db) {
     // step 1:  connect to server default database, run CREATE DATABASE statement
     return db.query(self.agent.createDatabase(database)).error(function(err) {
+      console.log('ERROR', err);
+      console.log(err.stack);
       err.code = err.code || 'E_CREATE_DB_FAIL'; // either connection failure or creation failure.
       return P.reject(err);
     });
@@ -462,17 +464,18 @@ EmmoModel.prototype.remove = function(database) {
   var self = this, agent = this.agent;
   
   // abadon spare connections in pool so we can remove target database
-  self.agent.dispose();
-  return self.scope(agent.defaultDatabase, function(db) {
-    return db.query(self.agent.dropDatabase(database));
-  }).tap(function() {
-    /**
-     * when database is removed
-     * @event EmmoModel#removed
-     * @param {string} database
-     */
-    self.emit('removed', database);
-    return self.updateConfig('remove', database);
+  return self.agent.dispose().then(function() {
+    return self.scope(agent.defaultDatabase, function(db) {
+      return db.query(self.agent.dropDatabase(database));
+    }).tap(function() {
+      /**
+       * when database is removed
+       * @event EmmoModel#removed
+       * @param {string} database
+       */
+      self.emit('removed', database);
+      return self.updateConfig('remove', database);
+    });
   });
 };
 

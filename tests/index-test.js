@@ -8,26 +8,33 @@ var User = require('./models/user.js');
 var Role = require('./models/role.js');
 var Department = require('./models/department.js');
 
-var jsonPath = path.resolve('./em.json');
+/**
+ * prepare config file
+ */
+var connectionString = process.env.CONNECTION_STRING || 'postgres://kleshwong@localhost/%s';
+var dialect = process.env.DIALECT || 'pg';
+
+var json = require('../tpl/em.json');
+var jsonPath = path.resolve(`./tests/configs/em.${dialect}.json`);
 var database;
+
+P.longStackTraces();
 
 describe('EmmoModel Test', function() {
   before('sync', function() {
     this.timeout(10 * 1000);
 
     // create config file
-    var json = require('../tpl/em.json');
     json.modelsPath = 'tests/models';
     json.migrationsPath = 'tests/migrations';
-    if (process.env.PGCONNECT) {
-      json.connectionString = process.env.PGCONNECT;
-    }
+    json.connectionString = connectionString;
+    json.dialect = dialect;
     fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2));
     database = json.database;
     if (!database) throw new Error('database can not be empty in tpl/em.json');
 
     // bootstrap em
-    em.init();
+    em.init(jsonPath);
 
     // remove all test database if exists
     return P.all(_.map([ database, 'emtest1' ], function(name) {
@@ -66,7 +73,7 @@ describe('EmmoModel Test', function() {
       should(user3).be.ok();
       should(user3.id).be.equal(user.id);
       should(user3.nick).be.exactly('emtest'); 
-      should(user3.isAdmin).be.true();
+      should(user3.isAdmin).be.ok();
       should(user3.email).be.exactly('emtest@test.com');
       should(user3.departmentId).not.be.ok();
       should(user3.createdAt).be.ok();

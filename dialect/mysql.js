@@ -1,11 +1,13 @@
 var _ = require('lodash');
 var base = require('./base.js');
 var mysql = require('mysql');
-var Promise2 = require('bluebird');
+var Connection = require('mysql/lib/Connection');
+var P = require('bluebird');
 var util = require('util');
 var urlParse = require('url').parse;
 
-Promise2.promisifyAll(mysql);
+P.promisifyAll(mysql);
+P.promisifyAll(Connection.prototype);
 
 _.merge(module.exports, base, {
   /**
@@ -24,6 +26,11 @@ _.merge(module.exports, base, {
   autoIncrement: 'AUTO_INCREMENT',
 
   /**
+   * Indicate AUTO_INCRMENT column must be with PRIMARY KEY declaration.
+   */
+  autoPrimaryKey: 'PRIMARY KEY',
+
+  /**
    * String concatenate operator(string), or CONCAT function(function) if RDBMS doesn't have one.
    *
    * @type {string|function}
@@ -34,22 +41,7 @@ _.merge(module.exports, base, {
       return "CONCATE_WS('', " + args.map(function(arg) {
         return builder.element(arg);
       }) + ")";
-    }
-  },
-
-  /**
-   * A query parameter placholder in SQL statement
-   *
-   * @example
-   *   placehold(1) => $2  // pg
-   *   placehold(1) => ?   // mysql
-   *
-   * @type {function}
-   * @param {number} index
-   * @return {string}
-   */
-  placehold: function(index) {
-    return '$' + (index * 1 + 1);
+    };
   },
 
   /**
@@ -74,9 +66,29 @@ _.merge(module.exports, base, {
    * @return {Promise<number>}
    */
   getInsertId: function(result) {
-    return Promise2.resolve(result.insertId);
+    return P.resolve(result.insertId);
+  },
+
+
+  /**
+   * mysql's query method invoke callback with 3 arguments(err, rows, something), thus r will be an array as in [rows, something]
+   */
+  result: function(r) {
+    return r[0];
   },
   
+  /**
+   * using text to simulate json/jsonb data type
+   */
+  columnType: function(columnDef) {
+    switch (columnDef.type) {
+      case 'bool':
+        return 'tinyint';
+    }
+
+    return base.columnType(columnDef);
+  },
+
   /**
    * Obtain a connection from pool
    *
@@ -93,13 +105,14 @@ _.merge(module.exports, base, {
     if (this.pools[connectionString] === undefined) {
       var options = urlParse(connectionString);
       var auth = options.auth.split(':');
-      this.pools[connectionString] = P.primisifyAll(mysql.createPool({
+      this.pools[connectionString] = P.promisifyAll(mysql.createPool({
         connectionLimit: this.config.poolSize || 10,
         host: options.hostname,
         port: options.port,
         database: options.pathname.substr(1),
         user: auth[0],
-        password: auth[1]
+        password: auth[1],
+        multipleStatements: true
       }));
     }
 
@@ -132,7 +145,13 @@ _.merge(module.exports, base, {
    * return {Promise}
    */
   dispose: function() {
-    return P.map(this.pools, function(pool) {
+    if (!this.pools)
+      return P.resolve();
+
+    var pools = this.pools;
+    delete this.pools;
+
+    return P.map(_.values(pools), function(pool, connectionString) {
       return pool.endAsync();
     });
   }

@@ -1,0 +1,11 @@
+{
+  "modelsPath": "tests/models",
+  "migrationsPath": "tests/migrations",
+  "dialect": "pg",
+  "connectionString": "postgres://kleshwong@localhost/%s",
+  "database": "emtest",
+  "all": [
+    "emtest",
+    "emtest1"
+  ]
+}

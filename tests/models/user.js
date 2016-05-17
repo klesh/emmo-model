@@ -9,6 +9,6 @@ module.exports = em.define('User', {
   age: { type: 'int' },
   email: { type: 'string', length: 100, validate: { isEmail: true }},
   departmentId: { type: 'int', refer: 'Department', onDelete: 'SET NULL' },
-  createdAt: { type: 'timestamptz', defaultValue: 'now()' },
-  updatedAt: { type: 'timestamptz' }
+  createdAt: { type: 'datetime', defaultValue: 'now()' },
+  updatedAt: { type: 'datetime' }
 });

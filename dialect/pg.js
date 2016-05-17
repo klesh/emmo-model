@@ -1,10 +1,10 @@
 var _ = require('lodash');
 var base = require('./base.js');
 var pg = require('pg');
-var Promise2 = require('bluebird');
+var P = require('bluebird');
 var util = require('util');
 
-Promise2.promisifyAll(pg);
+P.promisifyAll(pg);
 
 _.merge(module.exports, base, {
   defaultDatabase: 'postgres',
@@ -19,20 +19,35 @@ _.merge(module.exports, base, {
   quote: function(name) {
     return '"' + name + '"';
   },
+
+  /**
+   * should be implemented in dialect implementation.
+   *
+   * @param {any}    dialectResult   returned by dialect query method
+   * @returns {Result}
+   */
+  result: function(dialectResult) {
+    dialectResult.rows.affectedRows = dialectResult.rowCount;
+    return dialectResult.rows;
+  },
   wrapInsertSql: function(sql, builder) {
     if (builder.entity.autoIncrementName)
       return sql + " RETURNING " + this.quote(builder.entity.autoIncrementName);
     return sql;
   },
   getInsertId: function(result, builder, session) {
-    return Promise2.resolve(result[0][builder.entity.autoIncrementName]);
+    return P.resolve(result[0][builder.entity.autoIncrementName]);
   },
   columnType: function(columnDef) {
     if (columnDef.autoIncrement)
       return columnDef.type == 'int' ? 'serial' : 'bigserial';
     
-    if (columnDef.type == 'float')
-      return 'real';
+    switch (columnDef.type) {
+      case 'float':
+        return 'real';
+      case 'datetime':
+        return 'timestamptz';
+    }
 
     return base.columnType(columnDef);
   },
@@ -65,6 +80,7 @@ _.merge(module.exports, base, {
    * return {Promise}
    */
   dispose: function() {
-    return pg.end();
+    pg.end();
+    return P.resolve();
   }
 });

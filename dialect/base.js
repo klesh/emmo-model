@@ -24,6 +24,11 @@ var DialectAgent = {
   autoIncrement: 'AUTO_INCREMENT',
 
   /**
+   * indicate auto increment must be with primary key definition.
+   */
+  autoPrimarykey: false,
+
+  /**
    * in case of some weird database have different one
    * @type {string}
    */
@@ -82,8 +87,7 @@ var DialectAgent = {
    * @returns {Result}
    */
   result: function(dialectResult) {
-    dialectResult.rows.affectedRows = dialectResult.rowCount;
-    return dialectResult.rows;
+    return dialectResult;
   },
 
   /**
@@ -193,8 +197,12 @@ var DialectAgent = {
     if (columnDef.defaultValue !== undefined)
       script.push(util.format('DEFAULT %s', columnDef.defaultValue));
 
-    if (columnDef.autoIncrement && this.autoIncrement)
+    if (columnDef.autoIncrement && this.autoIncrement) {
       script.push(this.autoIncrement);
+
+      if (this.autoPrimaryKey)
+        script.push(this.autoPrimaryKey);
+    }
 
     return script.join(' ');
   },
@@ -218,7 +226,10 @@ var DialectAgent = {
   createModel: function(modelDef) {
     var script = [];
     script.push(this.createTable(modelDef.tableName, modelDef.columns));
-    script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey));
+
+    if (!this.autoPrimaryKey)
+      script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey));
+
     _.forEach(modelDef.indexes, function(indexInfo) {
       script.push(this.createIndex(modelDef.tableName, indexInfo));
     }, this);
@@ -291,6 +302,9 @@ var DialectAgent = {
                       this.quote(tableName),
                       this.quote(primaryKeysInfo.name),
                       this.joinColumns(primaryKeysInfo.columns)) + this.separator;
+  },
+  dropPrimaryKey: function(tableName, primaryKeysInfo) {
+    return this.dropConstraint(tableName, primaryKeysInfo.primaryKeysInfo.name);
   },
   createIndex: function(tableName, indexInfo) {
     var script = ['CREATE'];

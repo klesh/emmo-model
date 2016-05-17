@@ -29,7 +29,7 @@
         "length": 100
       },
       "departmentId": {
-        "columnName": "departmentId",
+        "columnName": "DepartmentId",
         "type": "int"
       }
     },
@@ -52,7 +52,7 @@
       {
         "name": "FK_Department_Users",
         "columns": [
-          "departmentId"
+          "DepartmentId"
         ],
         "refer": "Department",
         "onDelete": "SET NULL"
