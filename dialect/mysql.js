@@ -83,10 +83,29 @@ _.merge(module.exports, base, {
   columnType: function(columnDef) {
     switch (columnDef.type) {
       case 'bool':
-        return 'tinyint';
+        return 'tinyint(1)';
+      case 'tinyint':
+      case 'smallint':
+      case 'int':
+      case 'integer':
+      case 'bigint':
+        var length = columnDef.length || 10;
+        var statement = columnDef.type + '(' + length + ')';
+        if (columnDef.unsigned)
+          statement += ' unsigned';
+        return statement;
+      case 'real':
+      case 'double':
+      case 'float':
+      case 'decimal':
+      case 'numeric':
+        var statement = base.columnType(columnDef);
+        if (columnDef.unsigned)
+          statement += ' unsigned';
+        return statement;
+      default:
+        return base.columnType(columnDef);
     }
-
-    return base.columnType(columnDef);
   },
 
   /**
@@ -155,10 +174,14 @@ _.merge(module.exports, base, {
       return pool.endAsync();
     });
   },
-
+  renameTable: function(oldName, newName) {
+    return util.format('ALTER TABLE %s RENAME %s', 
+                      this.quote(oldName),
+                      this.quote(newName)) + this.separator;
+  },
   createPrimaryKey: function(tableName, primaryKeysInfo, modelDef) {
     var hasAutoIncrement = _.some(primaryKeysInfo.columns, function(columnName) {
-      return modelDef.columns[columnName].autoIncrement;
+      return _.find(modelDef.columns, { columnName: columnName }).autoIncrement;
     });
     if (hasAutoIncrement) return '';
     return util.format('ALTER TABLE %s ADD PRIMARY KEY (%s)',
@@ -167,5 +190,42 @@ _.merge(module.exports, base, {
   },
   dropPrimaryKey: function(tableName, primaryKeysInfo) {
     return util.format('ALTER TABLE %s DROP PRIMARY KEY', this.quote(tableName)) + this.separator;
-  }
+  },
+  createTable: function(tableName, tableDef) {
+    var tableOptions = tableDef.tableOptions || {};
+    var engine = tableOptions.engine || 'InnoDB';
+    var charset = tableOptions.charset || 'utf8';
+
+    return util.format('CREATE TABLE %s (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s', 
+                       this.quote(tableName), 
+                       this.columns(tableDef),
+                       engine,
+                       charset
+                      ) + this.separator;
+  },
+  changeColumnType: function(tableName, columnName, columnDef) {
+    return util.format('ALTER TABLE %s MODIFY COLUMN %s %s',
+                      this.quote(tableName),
+                      this.quote(columnName),
+                      this.columnType(columnDef)) + this.separator;
+
+  },
+  renameColumn: function(tableName, oldName, newName, columnDef) {
+    return util.format('ALTER TABLE %s CHANGE COLUMN %s %s %s',
+                      this.quote(tableName),
+                      this.quote(oldName),
+                      this.quote(newName),
+                      this.columnType(columnDef)) + this.separator;
+  },
+  renameIndex: function(oldName, newName, tableName) {
+    return util.format('ALTER TABLE %s RENAME INDEX %s TO %s',
+                      this.quote(tableName),
+                      this.quote(oldName),
+                      this.quote(newName)) + this.separator;
+  },
+  dropIndex: function(tableName, name) {
+    return util.format('ALTER TABLE %s DROP INDEX %s',
+                      this.quote(tableName),
+                      this.quote(name)) + this.separator;
+  },
 });

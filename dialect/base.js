@@ -158,10 +158,20 @@ var DialectAgent = {
    * @returns {string}
    */
   columnType: function(columnDef) {
-    if (columnDef.type == 'string')
-      return columnDef.length ?  util.format('varchar(%d)', columnDef.length) : 'text';
-
-    return columnDef.type;
+    switch (columnDef.type) {
+      case 'string':
+        return columnDef.length ?  util.format('varchar(%d)', columnDef.length) : 'text';
+      case 'decimal':
+      case 'real':
+      case 'double':
+      case 'float':
+      case 'numeric':
+        var length = columnDef.length || 10;
+        var decimals = columnDef.decimals >= 0 ? columnDef.decimals : 2;
+        return columnDef.type + '(' + length + ',' + decimals + ')';
+      default:
+        return columnDef.type;
+    }
   },
 
   /* return sql columns statement

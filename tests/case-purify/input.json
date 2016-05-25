@@ -9,14 +9,16 @@
       "isAdmin": { "columnName": "isAdmin", "type": "bool" },
       "email": { "columnName": "email", "type": "string", "length": 100, "validate": { "isEmail": true }},
       "departmentId": { "columnName": "DepartmentId", "type": "int", "refer": "Department", "onDelete": "SET NULL" }
-    }
+    },
+    "tableOptions": {}
   },
   "Relation": {
     "tableName": "Relations",
     "properties": {
       "userId": { "columnName": "userId", "type": "int", "primaryKey": true, "refer": "User", "referName": true, "allowNull": false, "onDelete": "CASCADE" },
       "relativeId": { "columnName": "relativeId", "type": "int", "primaryKey": true, "refer": "User", "referName": "FK_User_Relations_relativeId", "allowNull": false, "onDelete": "CASCADE" }
-    }
+    },
+    "tableOptions": {}
   },
   "RelationHistory": {
     "tableName": "RelationHistories",
@@ -26,6 +28,7 @@
       "relativeId": { "columnName": "relativeId", "type": "int", "refer": "Relation", "allowNull": false, "onDelete": "CASCADE" },
       "description": { "columnName": "description", "type": "string" },
       "startedAt": { "columnName": "startedAt", "type": "timestamptz" }
-    }
+    },
+    "tableOptions": {}
   }
 }

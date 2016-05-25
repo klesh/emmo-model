@@ -1,4 +1,4 @@
-ALTER TABLE "Roles" ALTER COLUMN "permission" TYPE text;
+ALTER TABLE `Roles` MODIFY COLUMN `permission` text;
 /***** PLACE YOUR CUSTOMIZE SCRIPT HERE *****/
 
 /******** END YOUR CUSTOMIZE SCRIPT *********/

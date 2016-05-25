@@ -57,7 +57,8 @@
         "refer": "Department",
         "onDelete": "SET NULL"
       }
-    ]
+    ],
+    "tableOptions": {}
   },
   "Relation": {
     "tableName": "Relations",
@@ -100,7 +101,8 @@
         "refer": "User",
         "onDelete": "CASCADE"
       }
-    ]
+    ],
+    "tableOptions": {}
   },
   "RelationHistory": {
     "tableName": "RelationHistories",
@@ -147,6 +149,7 @@
         "refer": "Relation",
         "onDelete": "CASCADE"
       }
-    ]
+    ],
+    "tableOptions": {}
   }
 }

@@ -1,24 +1,22 @@
 var fs = require('fs');
 var path = require('path');
 var P = require('bluebird');
-var pg = require('pg');
 var should = require('should');
 var util = require('util');
 var _ = require('lodash');
 var colors = require('colors');
+var EM = require('../../index.js');
+var env = require('../env.js');
 
-P.promisifyAll(pg);
+P.promisifyAll(fs);
 P.longStackTraces();
-  
-var jsonPatt = /.json$/;
-var connectionString = process.env.PGCONNECT || '/var/run/postgresql %s';
-var baseName = process.argv[2];
 
-var getConnectionString = function(database) {
-  database = database || 'postgres';
-  return util.format(connectionString, database);
-};
+var em = EM.new();
+em.init(_.defaults({
+  database: 'sql_gen_test'
+}, env));
 
+// read line from console
 var readline = function(prompt) {
   console.log(prompt);
   return new P(function(resolve, reject) {
@@ -30,81 +28,73 @@ var readline = function(prompt) {
   });
 };
 
+const specifiedFile = process.argv[2];
+// read definitions from target directory
+var readdefs = function(path) {
+  return fs.readdirSync(path).filter(function(f) {
+    if (specifiedFile && f.split('.')[0] !== specifiedFile)
+      return false;
+
+    return /\.json$/.test(f);
+  }).map(function(f) {
+    return { 
+      fileName: f, 
+      definition: require(path + '/' + f)
+    };
+  });
+};
+
+// get expected sql script file path
+var getExpectPath = function(casesDirPath, fileName) {
+  return path.resolve(casesDirPath, path.basename(fileName, '.json') + '.' + env.dialect + '.sql');
+};
+
+
 var generateResult = function(casesDirPath, getScript, initScript) {
-  fs.readdir(casesDirPath, function(err, fileNames) {
-    fileNames = _.filter(fileNames, function(f) { 
-      if (baseName && baseName != path.basename(f, '.json'))
-        return false;
-      return jsonPatt.test(f); 
-    });
+  return P.each(readdefs(casesDirPath), function(def) {
+    var sqlScript = getScript(def.definition);
+    console.log('\n*** CASE ' + def.fileName + ':'.green);
 
-    var chain = P.resolve();
+    // recreate database to keep things neat.
+    return em.dropCreate().then(function() {
+      // run sql script on database to make sure it's ok.
+      return em.scope(function(db) {
+        var promise;
+        if (initScript) {
+          // run initial script before current script if specified
+          var init = initScript(def.definition);
+          console.log(init.grey); // print initial script in grey color.
+          promise = db.query(init);
+        } else {
+          promise = P.resolve();
+        }
 
-    _.forEach(fileNames, function(fileName) {
-      chain = chain.then(function() {
-        var definition = require(casesDirPath + '/' + fileName);
-        var script = getScript(definition);
-        var title = '*** CASE ' + fileName + ':';
-        console.log('');
-        console.log(title.green);
-        
-        return pg.connectAsync(getConnectionString())
-          .spread(function(client, release) {
-            return client.queryAsync('DROP DATABASE IF EXISTS sql_gen_test;')
-              .then(function() { return client.queryAsync('CREATE DATABASE sql_gen_test;'); })
-              .then(release)
-              .then(function() {
-                return new P(function(resolve, reject) {
-                  var client2 = new pg.Client(getConnectionString('sql_gen_test'));
-                  client2.connect(function(err) {
-                    if (err)
-                      return reject(err);
-                    return resolve([ client2, client2.end.bind(client2) ]);
-                  });
-                });
-              })
-              .spread(function(client2, release2) { 
-                var promise;
-                if (initScript) {
-                  var init = initScript(definition);
-                  console.log(init.grey);
-                  promise = client2.queryAsync(init);
-                } else {
-                  promise = P.resolve();
-                }
-                return promise.then(function() {
-                  console.log(script);
-                  return client2.queryAsync(script);
-                }).finally(release2);
-              })
-              .then(function() {
-                return readline('*** Does generated sql script seems right(Y/n)?'.red)
-                  .then(function(positive) {
-                    if (!positive) return;
+        // run target script.
+        return promise.then(function() {
+          console.log(sqlScript);
+          return db.query(sqlScript);
+        });
+      }).then(function() {
+        return readline('*** Does generated sql script seems alright (Y/n)'.green);
+      }).then(function(ok) {
+        if (!ok)
+          return;
 
-                    var p = path.resolve(casesDirPath, path.basename(fileName, '.json') + '.sql');
-                    fs.writeFileSync(p, script);
-                  });
-              });
-          });
+        // write generated sql script to file.
+        return fs.writeFileAsync(getExpectPath(casesDirPath, def.fileName), sqlScript);
       });
     });
-
-    chain.then(function() {
-      console.log('Done');
-      process.exit(0);
-    });
+  }).then(function() {
+    console.log('Done');
+    process.exit(0);
   });
 };
 
 var runTests = function(casesDirPath, getScript) {
-  fs.readdirSync(casesDirPath).forEach(function(fileName) {
-    if (!jsonPatt.test(fileName)) return;
-
-    it(fileName, function() {
-      var actualScript = getScript(require(casesDirPath + '/' + fileName));
-      var expectPath = path.resolve(casesDirPath, path.basename(fileName, '.json') + '.sql');
-      var expectScript = fs.readFileSync(expectPath).toString();
+  readdefs(casesDirPath).forEach(function(def) {
+    it(def.fileName, function() {
+      var actualScript = getScript(def.definition);
+      var expectScript = fs.readFileSync(getExpectPath(casesDirPath, def.fileName)).toString();
       actualScript.should.be.exactly(expectScript);
     });
   });

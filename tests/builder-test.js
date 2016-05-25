@@ -4,9 +4,13 @@
 var em = require('../index.js');
 var Builder = require('../lib/builder.js');
 var should = require('should');
+var env = require('./env.js');
 
 describe('SQL Query Builder Test', function() {
-  em.init();
+  if (env.dialect !== 'pg')
+    return;
+
+  em.init(env.configPath);
 
   it('INSERT STATEMENT', function() {
     var builder = new Builder(em, 'User');
@@ -131,7 +135,7 @@ describe('SQL Query Builder Test', function() {
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: { age: 'DESC', id: 'ASC' }, offset: 10, limit: 5 });
-    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "age" DESC, "id" OFFSET $1 LIMIT $2');
-    should(builder.values).be.deepEqual([ 10, 5 ]);
+    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "age" DESC, "id" LIMIT $1 OFFSET $2');
+    should(builder.values).be.deepEqual([ 5, 10 ]);
   });
 });

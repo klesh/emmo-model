@@ -9,40 +9,44 @@ var em = require('../index.js');
 var Sql = require('../lib/sql.js');
 var util = require('util');
 var argv = require('yargs').argv;
+var P = require('bluebird');
 
 var command = argv._[0];
 
 var commanders = {
   // create sql migration script under migrations/ folder with specify name
   migrate: function(argv) {
-    var name = argv._[1];
+    var name = argv.rebase ? 'rebase' : argv._[1];
+
     if (!name)
       return console.log('Please assign migration name');
 
+    var uid = moment().format('YYYYMMDDHHmmss') * 1;
+    var full = uid + '-' + name;
+
     var config = require(path.resolve(argv.config || './em.json'));
     em.init(config);
-    return em.scope(function(db) {
-      return db.one('_Migration', {order: {uid: 'DESC'}, limit: 1});
-    }).then(function(lastMigration) {
-      var uid = moment().format('YYYYMMDDHHmmss') * 1;
-      var fullName = uid + '-' + name + '.sql';
-      var lastModels = JSON.parse(lastMigration.models);
-      var migrator = em.getMigrator();
-      var migrateScript = [
-        Sql.migrateScript(config.dialect, lastModels, migrator.purified),
-        util.format('INSERT INTO %s (%s) VALUES (%s)' + em.agent.separator,
-                   em.agent.quote('_Migrations'),
-                   ['uid', 'name', 'models'].map(em.agent.quote).join(', '),
-                   [uid, fullName, migrator.getModelsJSON().replace(/'/g, "''")].map(function(c){
-                     return util.format("'%s'", c);
-                   }))
-      ].join('\n');
+    var migrator = em.getMigrator();
 
+    var promise;
+    if (argv.rebase) {
+      promise = P.resolve(migrator.getInsertMigrationSQL(uid, full));
+    } else {
+      promise = em.scope(function(db) {
+        return db.one('_Migration', {order: {uid: 'DESC'}, limit: 1});
+      }).then(function(lastMigration) {
+        var lastModels = JSON.parse(lastMigration.models);
+        return Sql.migrateScript(config.dialect, lastModels, migrator.purified) + '\n' + migrator.getInsertMigrationSQL(uid, full);
+      });
+    }
+
+    promise.then(function(script) {
       var migrationsPath = path.resolve(em.migrationsPath);
       if (!fs.existsSync(migrationsPath)) fs.mkdirSync(migrationsPath);
 
-      return fs.writeFile(path.resolve(em.migrationsPath, fullName), migrateScript, function() {
-        console.log("Migration %s is created successfully.", fullName);
+      var fileName = full + '.sql';
+      return fs.writeFile(path.resolve(em.migrationsPath, fileName), script, function() {
+        console.log("Migration %s is created successfully.", fileName);
         process.exit(0);
       });
     });

@@ -37,7 +37,7 @@ describe('EmmoModel Test', function() {
     em.init(jsonPath);
 
     // remove all test database if exists
-    return P.all(_.map([ database, 'emtest1', 'emtest2' ], function(name) {
+    return P.all(_.map([ database, 'emtest1' ], function(name) {
       return em.remove(name);
     })).finally(function() {
       var readyTriggered = false, createdTriggered;
@@ -248,21 +248,6 @@ describe('EmmoModel Test', function() {
       return User.all({ join: 'Department', where: { 'Department.title': 'grouptest' } });
     }).then(function(users) {
       should(users.length).be.exactly(4);
-    });
-  });
-
-  it('rebase', function() {
-    return em.scope(function(db) {
-      return db.query('CREATE DATABASE emtest2;');
-    }).then(function() {
-      return em.rebase(['emtest2']);
-    }).then(function() {
-      return em.scope('emtest2', function(db) {
-        return db.all('_Migration').then(function(migrations) {
-          should(migrations.length).be.exactly(1);
-          return db.all('User').should.be.rejected();
-        });
-      });
     });
   });
 });

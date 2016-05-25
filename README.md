@@ -36,6 +36,17 @@ $ em init
 ```
 That would create `em.json` file, `models/` and `migrations/` folders in myproject/
 
+Sync database structure:
+```bash
+$ em sync
+```
+
+Rebase current model definition into database, this is useful when adapting to a legacy database,
+you can run this command whenever model definitions are created accordingly:
+```bash
+$ em rebase
+```
+
 ## Usage
 
 ### Step 1: Define models

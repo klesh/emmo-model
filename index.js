@@ -123,20 +123,32 @@ util.inherits(EmmoModel, EventEmitter);
  *
  * @param {string}                      name                singular
  * @param {object.<string, Property>}   properties          KEY as property name
- * @param {string}                      [tableName=names]   plural
+ * @param {string|object}               [tableOptions|tableName=names]   plural
  * @returns {Model}
  */
-EmmoModel.prototype.define = function(name, properties, tableName) {
+EmmoModel.prototype.define = function(name, properties, tableOptions) {
   // build up entity
+  if (_.isString(tableOptions)) {
+    tableOptions = {
+      tableName: tableOptions
+    };
+  } else if (!tableOptions) {
+    tableOptions = {};
+  }
+
+  var tableName = tableOptions.tableName || i.pluralize(name);
+  delete tableOptions.tableName;
+
   var entity = {
-    tableName: tableName || i.pluralize(name),
+    tableName: tableName,
     properties: properties,
     propertyNames: [],
     updatableNames: [],
     inputableNames: [],
     primaryKeyNames: [],
     requiredNames: [],
-    autoIncrementName: ''
+    autoIncrementName: '',
+    tableOptions: tableOptions
   };
 
   _.each(properties, function(property, name) {
@@ -155,7 +167,7 @@ EmmoModel.prototype.define = function(name, properties, tableName) {
     } else {
       if (property.length > 0) {
         property.validators.push(function length(value) {
-          return value.length <= property.length;
+          return (value.toString()).length <= property.length;
         });
       }
       
@@ -266,7 +278,7 @@ EmmoModel.prototype.init = function(options) {
   this.migrationsPath = path.resolve(this.config.migrationsPath);
 
   // make sure we are not sharing the models among multiple em inst.
-  if (!this.parent) {
+  if (!this.parent && fs.existsSync(this.config.modelsPath)) {
     // load models
     _.each(fs.readdirSync(this.config.modelsPath), function(fileName) {
       if (/\.js$/.test(fileName))
@@ -337,6 +349,10 @@ EmmoModel.prototype.spawn = function(options) {
 EmmoModel.prototype.scope = function(arg1, arg2) {
   if (!this.inited)
     throw new Error('you need to call init() before running any operation');
+
+  if (arg1 instanceof Session)
+    return arg2(arg1);
+
   var database, job, self = this;
   if (_.isFunction(arg2)) {
     job = arg2;
@@ -352,6 +368,23 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   
   return promise.finally(function() {
     return session.close();
+  });
+};
+
+/**
+ * Transaction support
+ */
+EmmoModel.prototype.transact = function(arg1, arg2) {
+  var database = _.isString(arg1) ? arg1 : null;
+  var job = database === null ? arg1 : arg2;
+  return this.scope(database, function(db) {
+    return db.begin().then(function() {
+      return job(db);
+    }).then(function() {
+      return db.commit();
+    }).catch(function(err) {
+      return db.rollback().throw(err);
+    });
   });
 };
 
@@ -523,26 +556,6 @@ EmmoModel.prototype.sync = function(databases) {
   });
 };
 
-
-/**
- * dump current model definition into database's last migartion for adapting to existing database
- */
-EmmoModel.prototype.rebase = function(databases) {
-  this.init();
-  var self = this, all = this.config.all;
-  databases = databases || (all && all.length ? all : [ this.config.database ]);
-
-  return P.each(databases, function(database) {
-    var migrator = self.getMigrator();
-    return self.scope(database, function(db) {
-      return db.query(migrator.getRebaseSQL()).then(function() {
-        // insert new migration history record
-        return db.insert('_Migration', migrator.lastMigrationData());
-      });
-    });
-  });
-};
-
 /**
  * recreate ORIGIN database, useful for unit test scenario
  *
@@ -625,7 +638,7 @@ em.newModelErr = function(code, info) {
       message = 'Illegal input value for ' + info.entityName + '.' + info.propertyName;
       break;
     case 'E_VALIDATION_FAIL':
-      message = info.property.message || 'Validation fail for ' + info.entityName + '.' + info.propertyName;
+      message = info.property.message || 'Validation fail for ' + info.entityName + '.' + info.propertyName + ' ' + info.reason;
       break;
   }
   var error = new Error(message);

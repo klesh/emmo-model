@@ -5,7 +5,7 @@
       "columns": {
         "id": { "columnName": "id", "type": "int", "primaryKey": true, "autoIncrement": true },
         "name": { "columnName": "name", "type": "string", "length": 50, "unique": true },
-        "permission": { "columnName": "permission", "type": "jsonb" }
+        "permission": { "columnName": "permission", "type": "int" }
       },
       "primaryKey": {
         "name": "PK_Roles",
