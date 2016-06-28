@@ -252,6 +252,11 @@ EmmoModel.prototype.init = function(options) {
     this.config = require(this.configPath);
   } else {
     this.config = options;
+
+    var absPath = path.resolve('./em.json');
+    if (fs.existsSync(absPath)) {
+      this.config = _.defaults(options, require(absPath));
+    }
   }
 
   _.defaults(this.config, {
@@ -376,14 +381,14 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
  */
 EmmoModel.prototype.transact = function(arg1, arg2) {
   var database = _.isString(arg1) ? arg1 : null;
-  var job = database === null ? arg1 : arg2;
+  var job = _.isFunction(arg2) ? arg2 : arg1;
   return this.scope(database, function(db) {
     return db.begin().then(function() {
       return job(db);
     }).then(function() {
       return db.commit();
     }).catch(function(err) {
-      return db.rollback().throw(err);
+      return db.rollback().then(() => P.reject(err));
     });
   });
 };
@@ -452,8 +457,8 @@ EmmoModel.prototype.create = function(database) {
   return self.scope(agent.defaultDatabase, function(db) {
     // step 1:  connect to server default database, run CREATE DATABASE statement
     return db.query(self.agent.createDatabase(database)).error(function(err) {
-      console.log('ERROR', err);
-      console.log(err.stack);
+      //console.log('ERROR', err);
+      //console.log(err.stack);
       err.code = err.code || 'E_CREATE_DB_FAIL'; // either connection failure or creation failure.
       return P.reject(err);
     });

@@ -210,6 +210,13 @@ _.merge(module.exports, base, {
                       this.columnType(columnDef)) + this.separator;
 
   },
+  changeColumnDefaultValue: function(tableName, columnName, columnDef) {
+    return util.format('ALTER TABLE %s MODIFY COLUMN %s %s DEFAULT %s',
+                      this.quote(tableName),
+                      this.quote(columnName),
+                      this.columnType(columnDef),
+                      columnDef.defaultValue === null || columnDef.defaultValue === undefined ? 'NULL' : columnDef.defaultValue) + this.separator;
+  },
   renameColumn: function(tableName, oldName, newName, columnDef) {
     return util.format('ALTER TABLE %s CHANGE COLUMN %s %s %s',
                       this.quote(tableName),

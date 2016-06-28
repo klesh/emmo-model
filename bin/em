@@ -45,9 +45,36 @@ var commanders = {
       if (!fs.existsSync(migrationsPath)) fs.mkdirSync(migrationsPath);
 
       var fileName = full + '.sql';
-      return fs.writeFile(path.resolve(em.migrationsPath, fileName), script, function() {
-        console.log("Migration %s is created successfully.", fileName);
-        process.exit(0);
+      fs.writeFile(path.resolve(em.migrationsPath, fileName), script, function(err) {
+        if (err) {
+          console.log("Error occured while creating sql file: ", err.message);
+          console.log(err.stack);
+          process.exit(1);
+        } else {
+          console.log('Migration sql %s is created successfully.', fileName);
+          if (!argv.js)
+            return process.exit(0);
+
+          var jsFileName = full + '.js';
+          fs.readFile(path.resolve(__dirname, '../tpl/migration.js'), function(err, buff) {
+            if (err) {
+              console.log("Error occured while reading js template: ", err.message);
+              console.log(err.stack);
+              process.exit(1)
+            } else {
+              fs.writeFile(path.resolve(em.migrationsPath, jsFileName), buff, function(err) {
+                if (err) {
+                  console.log('Error occured while creating js file: ', err.message);
+                  console.log(err.stack);
+                  process.exit(1);
+                } else {
+                  console.log('Migration js %s is created successfully.', jsFileName);
+                  process.exit(0);
+                }
+              });
+            }
+          });
+        }
       });
     });
   },
@@ -86,10 +113,11 @@ var commanders = {
     });
   },
   // to dump current models definition into database, for adapting to existing database
-  rebase: function() {
-    em.init();
-    em.rebase().then(function() {
-      console.log('rebase models definition into databases finish successfully');
+  'drop-create': function() {
+    var database = argv._[1];
+    em.init({ database: database });
+    em.dropCreate().then(function() {
+      console.log('drop and create database %s finish successfully', em.config.database);
       process.exit(0);
     });
   }
