@@ -1,5 +1,6 @@
 'use strict';
 
+const P = require('bluebird');
 
 /**
  * @typedef {object} MigrationData
@@ -27,7 +28,7 @@ module.exports = function(db, migration) {
     afterCustomize(db),
     db.query(migration.scriptAfter)
   ]);
-}
+};
 
 
 function beforeCustomize(db) {

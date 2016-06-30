@@ -3,5 +3,8 @@
   "migrationsPath": "tests/migrations",
   "dialect": "pg",
   "connectionString": "postgres://kleshwong@localhost/%s",
-  "database": "emtest"
+  "database": "emtest",
+  "children": [
+    "emtest1"
+  ]
 }

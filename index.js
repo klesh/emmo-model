@@ -13,6 +13,7 @@ var EventEmitter = require('events');
 var Session = require('./lib/session.js');
 var Expression = require('./lib/expression.js');
 var Migrator = require('./lib/migrator.js');
+var Store = require('./lib/store.js');
 
 var buildModel = require('./lib/model.js');
 var allValidators = _.keys(V).filter(fn => _.startsWith(fn, 'is') || [ 'contains', 'matches', 'equals' ].indexOf(fn) >= 0);
@@ -152,9 +153,6 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
   };
 
   _.each(properties, function(property, name) {
-    // columnName equals to property name defaulty
-    if (property.virtual !== true)
-      property.columnName = property.columnName || name;
 
     // create validator for property
     if (!_.isArray(property.validators))
@@ -188,8 +186,11 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
       });
     }
 
-    // collection all property names
-    entity.propertyNames.push(name);
+    // columnName equals to property name defaulty
+    if (property.virtual !== true) {
+      property.columnName = property.columnName || name;
+      entity.propertyNames.push(name);
+    }
 
     // find out autoIncrement and updatable properties
     if (property.autoIncrement) 
@@ -238,8 +239,9 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
  *   3. share definition among multiple EmmoModel
  *
  * @param {InitOptions|string} [optionsOrConfigPath]
+ * @param {object}  store       should provide add/remove/exists/getAll as ./lib/store.js did
  */
-EmmoModel.prototype.init = function(options) {
+EmmoModel.prototype.init = function(options, store) {
   if (this.inited)
     return this;
   this.inited = true;
@@ -258,6 +260,7 @@ EmmoModel.prototype.init = function(options) {
       this.config = _.defaults(options, require(absPath));
     }
   }
+
 
   _.defaults(this.config, {
     modelsPath: './models',
@@ -279,6 +282,7 @@ EmmoModel.prototype.init = function(options) {
   if (!this.config.migrationsPath)
     throw new Error('init failure: migrationsPath can not be empty');
 
+  this.store = store || new Store(this);
   this.modelsPath = path.resolve(this.config.modelsPath);
   this.migrationsPath = path.resolve(this.config.migrationsPath);
 
@@ -293,7 +297,6 @@ EmmoModel.prototype.init = function(options) {
   
   // load dialect
   this.agent = require('./dialect/' + this.config.dialect + '.js');
-  this.agent.config = this.config;
 
   // copy database functions from dialect
   _.each(this.agent.functions, function(f, n) {
@@ -309,11 +312,16 @@ EmmoModel.prototype.init = function(options) {
     };
   }, this);
 
-//  this.quote = this.agent.quote;
-//  this.quoteString = this.agent.quoteString;
-
   return this;
 };
+
+EmmoModel.prototype.getAllDatabases = function() {
+  var self = this;
+  self.init();
+  return self.store.getChildren().then(function(children) {
+    return children.concat(self.config.database);
+  });
+}
 
 /**
  * create a new EmmoModel instance to a new server with same definition, like for backup/duplicate
@@ -398,7 +406,7 @@ EmmoModel.prototype.transact = function(arg1, arg2) {
  */
 EmmoModel.prototype.all = function(job) {
   var self = this;
-  return P.each(this.config.all, function(database) {
+  return this.getAllDatabases().each(function(database) {
     return self.scope(database, job);
   });
 };
@@ -413,30 +421,6 @@ EmmoModel.prototype.getMigrator = function() {
     this.migrator = new Migrator(this);
   }
   return this.migrator;
-};
-
-/**
- * Update config and save it to database
- *
- * @param {string}  action      create/remove
- * @param {string}  database    
- */
-EmmoModel.prototype.updateConfig = function(action, database) {
-  var all = this.config.all || [];
-
-  var index = all.indexOf(database);
-  if (action === 'create' && index < 0)
-    all.push(database);
-  else if (index >= 0)
-    _.pullAt(all, index);
-
-  if (all.length === 0)
-    delete this.config.all;
-  else
-    this.config.all = all;
-
-  if (this.configPath)
-    fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
 };
 
 /**
@@ -486,7 +470,8 @@ EmmoModel.prototype.create = function(database) {
      * @param {string} database
      */
     self.emit('created', database);
-    return self.updateConfig('create', database);
+    if (database !== self.config.database)
+      return self.store.add(database);
   });
 };
 
@@ -512,7 +497,7 @@ EmmoModel.prototype.remove = function(database) {
        * @param {string} database
        */
       self.emit('removed', database);
-      return self.updateConfig('remove', database);
+      return self.store.remove(database);
     });
   });
 };
@@ -531,10 +516,9 @@ EmmoModel.prototype.remove = function(database) {
  */
 EmmoModel.prototype.sync = function(databases) {
   this.init();
-  var self = this, all = this.config.all;
-  databases = databases || (all && all.length ? all : [ this.config.database ]);
+  var self = this;
 
-  return P.each(databases, function(database) {
+  return this.getAllDatabases().each(function(database) {
     return self.create(database).error(function(err) {
       // if creating process has failed, it means we should do migration.
       if (err.code !== 'E_CREATE_DB_FAIL')

@@ -48,12 +48,12 @@ describe('EmmoModel Test', function() {
         createdTriggered = true;
       });
       return em.sync().then(function() {
-        should(readJson().all).be.deepEqual([ database ]);
+        should(readJson().children).not.be.ok();
         should(readyTriggered).be.true();
         return em.create('emtest1');
       }).then(function() {
         should(createdTriggered).be.true();
-        should(readJson().all).be.deepEqual([ database, 'emtest1' ]);
+        should(readJson().children).be.deepEqual([ 'emtest1' ]);
       });
     });
   });

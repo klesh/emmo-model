@@ -75,7 +75,7 @@ describe('SQL Query Builder Test', function() {
   it('SELECT STATEMENT', function() {
     var builder = new Builder(em, 'User');
     builder.select();
-    should(builder.sql).be.exactly('SELECT * FROM "Users"');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users"');
     should(builder.values).be.deepEqual([  ]);
 
     builder.select({ field: 'id' });
@@ -119,23 +119,23 @@ describe('SQL Query Builder Test', function() {
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ as: 'u', join: { 'UserRole': { as: 'ur', type: 'INNER' }, "Role": { as: 'r', to: 'ur' } } });
-    should(builder.sql).be.exactly('SELECT "u".* FROM "Users" "u" INNER JOIN "UserRoles" "ur" ON ("u"."id"="ur"."userId") LEFT OUTER JOIN "Roles" "r" ON ("r"."id"=ur."roleId")');
+    should(builder.sql).be.exactly('SELECT "u"."id", "u"."nick", "u"."password" AS "passwordHash", "u"."isAdmin", "u"."age", "u"."email", "u"."departmentId", "u"."createdAt", "u"."updatedAt" FROM "Users" "u" INNER JOIN "UserRoles" "ur" ON ("u"."id"="ur"."userId") LEFT OUTER JOIN "Roles" "r" ON ("r"."id"=ur."roleId")');
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: 'id' });
-    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "id"');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "id"');
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: [ 'id', 'age' ] });
-    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "id", "age"');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "id", "age"');
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: { age: 'DESC', id: 'ASC' } });
-    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "age" DESC, "id"');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id"');
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: { age: 'DESC', id: 'ASC' }, offset: 10, limit: 5 });
-    should(builder.sql).be.exactly('SELECT * FROM "Users" ORDER BY "age" DESC, "id" LIMIT $1 OFFSET $2');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id" LIMIT $1 OFFSET $2');
     should(builder.values).be.deepEqual([ 5, 10 ]);
   });
 });
