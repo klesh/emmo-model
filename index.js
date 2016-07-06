@@ -251,7 +251,7 @@ EmmoModel.prototype.init = function(options, store) {
     this.config = require(this.configPath);
   } else if (_.isString(options)) {
     this.configPath = options;
-    this.config = require(this.configPath);
+    this.config = require(path.resolve(this.configPath));
   } else {
     this.config = options;
 
@@ -393,7 +393,7 @@ EmmoModel.prototype.transact = function(arg1, arg2) {
   return this.scope(database, function(db) {
     return db.begin().then(function() {
       return job(db);
-    }).then(function() {
+    }).tap(function() {
       return db.commit();
     }).catch(function(err) {
       return db.rollback().then(() => P.reject(err));
