@@ -290,8 +290,9 @@ EmmoModel.prototype.init = function(options, store) {
   if (!this.parent && fs.existsSync(this.config.modelsPath)) {
     // load models
     _.each(fs.readdirSync(this.config.modelsPath), function(fileName) {
-      if (/\.js$/.test(fileName))
+      if (/\.js$/.test(fileName)) {
         require(path.resolve(this.config.modelsPath, fileName));
+      }
     }, this);
   }
   
