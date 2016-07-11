@@ -199,16 +199,18 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
       entity.updatableNames.push(name);
 
     // collect inputable properties
-    if (property.input !== false)
+    if (property.input !== false) {
       entity.inputableNames.push(name);
+      
+      if (!property.autoIncrement && property.allowNull === false) {
+        entity.requiredNames.push(name);
+      }
+    }
 
     // collect primary key properties
     if (property.primaryKey === true)
       entity.primaryKeyNames.push(name);
 
-    if (!property.autoIncrement && property.allowNull === false) {
-      entity.requiredNames.push(name);
-    }
   });
   
   if (entity.primaryKeyNames.length === 0)
