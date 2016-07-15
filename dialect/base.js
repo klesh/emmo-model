@@ -565,6 +565,18 @@ var DialectAgent = {
       return function(builder) {
         return 'FORMAT(' + builder.quote(resource) + ',' + builder.value(format) + ')';
       };
+    },
+
+    /**
+     * COALESCE function
+     */
+    coalesce: function() {
+      var args = _.toArray(arguments);
+      if (args.length < 2)
+        throw new Error('colalesce requires at least tow arguments');
+      return function(builder) {
+        return 'COALESCE(' + args.map(a => builder.field(a)).join(', ') + ')';
+      }
     }
   },
 
