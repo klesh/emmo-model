@@ -393,6 +393,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
 EmmoModel.prototype.transact = function(arg1, arg2) {
   var database = _.isString(arg1) ? arg1 : null;
   var job = _.isFunction(arg2) ? arg2 : arg1;
+
   return this.scope(database, function(db) {
     return db.begin().then(function() {
       return job(db);

@@ -82,5 +82,24 @@ _.merge(module.exports, base, {
   dispose: function() {
     pg.end();
     return P.resolve();
+  },
+
+  comparators: {
+    like: function like(str, type) {
+      return function(builder) {
+        var esc = '';
+        if (str.indexOf('%') >= 0) {
+          esc = " ESCAPE '\\'";
+          str = str.replace(/%/g, '\\%');
+        }
+        if (type === 'start')
+          str += '%';
+        else if (type == 'end')
+          str = '%' + str;
+        else
+          str = '%' + str + '%';
+        return ' ILIKE ' + builder.value(str) + esc;
+      };
+    },
   }
 });
