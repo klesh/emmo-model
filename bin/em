@@ -107,7 +107,7 @@ var commanders = {
     em.init(config);
     */
     em.init();
-    em.sync().then(function() {
+    em.sync(argv._.slice(1)).then(function() {
       console.log('sync finish successfully');
       process.exit(0);
     });

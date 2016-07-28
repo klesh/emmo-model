@@ -306,7 +306,7 @@ var DialectAgent = {
     return util.format('ALTER TABLE %s ALTER COLUMN %s',
                       this.quote(tableName),
                       this.quote(columnName),
-                      columnDef.allowNull ? 'DROP NOT NULL' : 'SET NOT NULL') + this.separator;
+                      columnDef.allowNull === false ? 'SET NOT NULL' : 'DROP NOT NULL') + this.separator;
   },
   createPrimaryKey: function(tableName, primaryKeysInfo) {
     return util.format('ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)',
@@ -576,6 +576,12 @@ var DialectAgent = {
         throw new Error('colalesce requires at least tow arguments');
       return function(builder) {
         return 'COALESCE(' + args.map(a => builder.field(a)).join(', ') + ')';
+      }
+    },
+
+    fallback: function(column, defaultValue) {
+      return function(builder) {
+        return 'COALESCE(' + builder.field(column) + ', ' + builder.value(defaultValue) + ')';
       }
     }
   },

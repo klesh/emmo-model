@@ -520,9 +520,19 @@ EmmoModel.prototype.remove = function(database) {
  */
 EmmoModel.prototype.sync = function(databases) {
   this.init();
-  var self = this;
+  var self = this, p;
 
-  return this.getAllDatabases().each(function(database) {
+  if (databases) {
+    if (_.isString(databases))
+      databases = [ databases ];
+
+    if (databases.length)
+      p = P.resolve(databases);
+  }
+  
+  p = p || this.getAllDatabases();
+
+  return p.each(function(database) {
     return self.create(database).error(function(err) {
       // if creating process has failed, it means we should do migration.
       if (err.code !== 'E_CREATE_DB_FAIL')
