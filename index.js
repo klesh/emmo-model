@@ -203,7 +203,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     if (property.input !== false) {
       entity.inputableNames.push(name);
       
-      if (!property.autoIncrement && property.allowNull === false) {
+      if (!property.autoIncrement && property.allowNull === false && !property.defaultValue) {
         entity.requiredNames.push(name);
       }
     }
