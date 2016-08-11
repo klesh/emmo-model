@@ -9,6 +9,7 @@ var _ = require('lodash');
 var P = require('bluebird');
 var V = require('validator');
 var EventEmitter = require('events');
+var debug = require('debug')('emmo-model:index');
 
 var Session = require('./lib/session.js');
 var Expression = require('./lib/expression.js');
@@ -400,6 +401,7 @@ EmmoModel.prototype.transact = function(arg1, arg2) {
     }).tap(function() {
       return db.commit();
     }).catch(function(err) {
+      debug('TRANSACTION FAIL: ', err);
       return db.rollback().then(() => P.reject(err));
     });
   });

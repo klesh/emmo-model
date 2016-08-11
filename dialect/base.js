@@ -403,12 +403,14 @@ var DialectAgent = {
      * 
      * @param {string} column
      * @returns {string}
-     */
-    distinct: function(column) {
+    distinct: function(columns) {
+      if (!_.isArray(columns))
+        columns = [columns];
       return function(builder) {
         return 'DISTINCT ' + builder.quote(column);
       };
     },
+     */
 
     /**
      * sql avg function
