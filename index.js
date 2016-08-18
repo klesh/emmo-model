@@ -154,6 +154,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
   };
 
   _.each(properties, function(property, name) {
+    property.$name = name;
 
     // create validator for property
     if (!_.isArray(property.validators))
