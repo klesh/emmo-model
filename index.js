@@ -25,15 +25,14 @@ P.longStackTraces();
 /**
  * A object to contain Entity definition
  *
- * @typedef Entity
- * @type {object}
- * @property {string}           tableName
- * @property {Property[]}       properties
- * @property {string[]}         propertyNames
- * @property {string[]}         updatableNames
- * @property {string[]}         inputableNames
- * @property {string[]}         primaryKeyNames
- * @property {string}           autoIncrementName
+ * @typedef {object} Entity
+ * @property {string}                             tableName
+ * @property {object<string, Property>}           properties
+ * @property {string[]}                           propertyNames
+ * @property {string[]}                           updatableNames
+ * @property {string[]}                           inputableNames
+ * @property {string[]}                           primaryKeyNames
+ * @property {string}                             autoIncrementName
  */
 
 /**
