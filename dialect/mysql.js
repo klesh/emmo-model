@@ -235,4 +235,11 @@ _.merge(module.exports, base, {
                       this.quote(tableName),
                       this.quote(name)) + this.separator;
   },
+  functions: {
+    ymd: function(resource) {
+      return function(builder) {
+        return 'DATE_FORMAT(' + builder.quote(resource) + ", '%Y-%m-%d')";
+      };
+    }
+  }
 });

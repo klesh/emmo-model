@@ -569,7 +569,7 @@ var DialectAgent = {
       };
     },
 
-    /**
+     /**
      * COALESCE function
      */
     coalesce: function() {

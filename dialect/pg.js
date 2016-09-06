@@ -101,5 +101,13 @@ _.merge(module.exports, base, {
         return ' ILIKE ' + builder.value(str) + esc;
       };
     },
+  },
+
+  functions: {
+    ymd: function(resource) {
+      return function(builder) {
+        return 'to_char(' + builder.quote(resource) + ", 'YYYY-MM-DD')";
+      };
+    }
   }
 });
