@@ -21,13 +21,29 @@ const P = require('bluebird');
  * @return {Promise}
  */
 module.exports = function(db, migration) {
-  return P.each([
-    db.query(migration.scriptBefore),
-    beforeCustomize(db),
-    db.query(migration.scriptCustomize),
-    afterCustomize(db),
-    db.query(migration.scriptAfter)
-  ]);
+  var p = P.resolve();
+
+  p = p.then(function() {
+    return db.query(migration.scriptBefore);
+  });
+
+  p = p.then(function() {
+    return beforeCustomize(db);
+  });
+
+  p = p.then(function() {
+    return db.query(migration.scriptCustomize);
+  });
+
+  p = p.then(function() {
+    return afterCustomize(db);
+  });
+
+  p = p.then(function() {
+    return db.query(migration.scriptAfter);
+  });
+
+  return p;
 };
 
 
