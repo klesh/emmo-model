@@ -60,7 +60,7 @@ P.longStackTraces();
  * @type {Column}
  * @property {string}           columnName
  * @property {boolean}          [virtual=false]           only in memory, do not map to database
- * @property {boolean}          [input=true]              accept input from user 
+ * @property {boolean}          [input=true]              accept input from user
  * @property {string}           [dateFormat=ISO8601]      how to parse Date @see {@link http://momentjs.com/docs/#/parsing/}
  * @property {boolean|boolean}  [autoTrim=true]           trim space characters for string type, pass 'length' to trancate by length property
  * @property {string|boolean}   [index]                   assign same index name to multiple columns will create a composite index
@@ -97,7 +97,7 @@ function EmmoModel(parent) {
 
   /**
    * store all Models you ever defined.
-   * 
+   *
    * @type {object.<string, Model>}
    */
   this.models = {};
@@ -112,7 +112,7 @@ function EmmoModel(parent) {
 
   this.define('_Migration', {
     uid: { type: 'bigint', primaryKey: true, allowNull: false },
-    name: { type: "string", length: 50, unique: true }, 
+    name: { type: "string", length: 50, unique: true },
     models: { type: "string" }
   });
 }
@@ -169,7 +169,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
           return (value.toString()).length <= property.length;
         });
       }
-      
+
       _.each(_.intersection(allValidators, _.keys(property)), function(validatorName) {
         var parameter = property[validatorName];
         var validator;
@@ -194,7 +194,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     }
 
     // find out autoIncrement and updatable properties
-    if (property.autoIncrement) 
+    if (property.autoIncrement)
       entity.autoIncrementName = name;
     else if (property.virtual !== true)
       entity.updatableNames.push(name);
@@ -202,7 +202,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     // collect inputable properties
     if (property.input !== false) {
       entity.inputableNames.push(name);
-      
+
       if (!property.autoIncrement && property.allowNull === false && property.defaultValue === null && property.defaultValue === undefined) {
         entity.requiredNames.push(name);
       }
@@ -213,7 +213,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
       entity.primaryKeyNames.push(name);
 
   });
-  
+
   if (entity.primaryKeyNames.length === 0)
     throw new Error(name + ' has not primary key');
 
@@ -298,7 +298,7 @@ EmmoModel.prototype.init = function(options, store) {
       }
     }, this);
   }
-  
+
   // load dialect
   this.agent = require('./dialect/' + this.config.dialect + '.js');
 
@@ -361,7 +361,7 @@ EmmoModel.prototype.spawn = function(options) {
  *
  * @param {string}          [database=ORIGIN]   which database you want to operate
  * @param {EmmoModel~job}   job                 perform operation with session instance, need to return promise
- * @returns {promise} 
+ * @returns {promise}
  */
 EmmoModel.prototype.scope = function(arg1, arg2) {
   if (!this.inited)
@@ -380,9 +380,9 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   database = database || this.config.database;
   var session = new Session(this, database);
   var promise = job(session);
-  if (!promise || !_.isFunction(promise.finally)) 
+  if (!promise || !_.isFunction(promise.finally))
     throw new Error("Must return a promise");
-  
+
   return promise.finally(function() {
     return session.close();
   });
@@ -434,7 +434,7 @@ EmmoModel.prototype.getMigrator = function() {
  *
  * @fires   EmmoModel#created
  * @param   {string}  [database=ORIGIN]
- * @returns {Promise} 
+ * @returns {Promise}
  */
 EmmoModel.prototype.create = function(database) {
   this.init();
@@ -491,7 +491,7 @@ EmmoModel.prototype.create = function(database) {
 EmmoModel.prototype.remove = function(database) {
   this.init();
   var self = this, agent = this.agent;
-  
+
   // abadon spare connections in pool so we can remove target database
   return self.agent.dispose().then(function() {
     return self.scope(agent.defaultDatabase, function(db) {
@@ -531,7 +531,7 @@ EmmoModel.prototype.sync = function(databases) {
     if (databases.length)
       p = P.resolve(databases);
   }
-  
+
   p = p || this.getAllDatabases();
 
   return p.each(function(database) {
@@ -539,17 +539,17 @@ EmmoModel.prototype.sync = function(databases) {
       // if creating process has failed, it means we should do migration.
       if (err.code !== 'E_CREATE_DB_FAIL')
         return P.reject(err);
-      
+
       var migrator = self.getMigrator();
-      return self.scope(database, function(db) {
+      return self.transact(database, function(db) {
         return migrator.run(db);
-      }).then(function(){ 
+      }).then(function(){
         /**
          * when the database is migrated, you can perform initialize against database here.
          * @event EmmoModel#migrated
          * @param {string} databaseName
          */
-        self.emit('migrated', database);  
+        self.emit('migrated', database);
       });
     });
   }).then(function() {
