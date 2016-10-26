@@ -315,7 +315,7 @@ var DialectAgent = {
                       this.joinColumns(primaryKeysInfo.columns)) + this.separator;
   },
   dropPrimaryKey: function(tableName, primaryKeysInfo) {
-    return this.dropConstraint(tableName, primaryKeysInfo.primaryKeysInfo.name);
+    return this.dropConstraint(tableName, primaryKeysInfo.name);
   },
   createIndex: function(tableName, indexInfo) {
     var script = ['CREATE'];
