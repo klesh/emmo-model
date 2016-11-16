@@ -161,7 +161,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
 
     if (property.autoIncrement) {
       property.validators.push(function autoIncrement(value) {
-        return V.isInt(value) && value > 0;
+        return Number.isInteger(value * 1) && value > 0;
       });
     } else {
       if (property.length > 0) {
