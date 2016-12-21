@@ -41,7 +41,7 @@ _.merge(module.exports, base, {
   columnType: function(columnDef) {
     if (columnDef.autoIncrement)
       return columnDef.type == 'int' ? 'serial' : 'bigserial';
-    
+
     switch (columnDef.type) {
       case 'float':
         return 'real';
@@ -51,7 +51,7 @@ _.merge(module.exports, base, {
 
     return base.columnType(columnDef);
   },
-  
+
   /**
    * Obtain a connection from pool
    *
@@ -76,7 +76,7 @@ _.merge(module.exports, base, {
 
   /**
    * Dispose pools, might be needed for DROPing database
-   * 
+   *
    * return {Promise}
    */
   dispose: function() {

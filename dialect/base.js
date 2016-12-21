@@ -32,11 +32,11 @@ var DialectAgent = {
    * in case of some weird database have different one
    * @type {string}
    */
-  separator: ';', 
+  separator: ';',
 
   /**
    * return parameter placeholder mark for SQL statement base on index
-   * 
+   *
    * @param {number} index   parameter position, 0 base
    * @return {string}
    */
@@ -121,10 +121,10 @@ var DialectAgent = {
   convertDate: function(text, property) {
     return moment(text);
   },
-  
+
   /**
    * quote and join column names, like ['col1', 'col2'] to  "col1", "col2"
-   * 
+   *
    * @param {string[]} columNames
    * @returns {string}
    */
@@ -151,7 +151,7 @@ var DialectAgent = {
 
   /**
    * return sql type statement
-   * (from) { type: 'int', autoIncrement: true } 
+   * (from) { type: 'int', autoIncrement: true }
    * ( to ) serial
    *
    * @param {Column} columnDef
@@ -178,7 +178,7 @@ var DialectAgent = {
   },
 
   /* return sql columns statement
-   * (from) { id: { type: 'int' }, name: { type: 'string', length: 50 } } 
+   * (from) { id: { type: 'int' }, name: { type: 'string', length: 50 } }
    * ( to )   "id" int,\n  "name" varchar(50)
    *
    * @param {Column[]} columnDef
@@ -203,8 +203,8 @@ var DialectAgent = {
   column: function(columnDef) {
     var script = [];
     script.push(this.columnType(columnDef));
-    
-    if (columnDef.allowNull === false) 
+
+    if (columnDef.allowNull === false)
       script.push('NOT NULL');
 
     if (columnDef.defaultValue !== undefined)
@@ -246,10 +246,10 @@ var DialectAgent = {
     }, this);
     return script.join('\n');
   },
-  /* return create table statement 
-   * (from) tableName: 'Users', 
-   *        tableDef: { 
-   *          name: {type: 'string', length: 50, primaryKey: true, allowNull: false}, 
+  /* return create table statement
+   * (from) tableName: 'Users',
+   *        tableDef: {
+   *          name: {type: 'string', length: 50, primaryKey: true, allowNull: false},
    *          password: {type: 'string', length: 40}
    *        }
    * ( to ) CREATE TABLE "Users" (
@@ -258,19 +258,19 @@ var DialectAgent = {
    *        );
    */
   createTable: function(tableName, tableDef) {
-    return util.format('CREATE TABLE %s (\n%s\n)', 
-                       this.quote(tableName), 
+    return util.format('CREATE TABLE %s (\n%s\n)',
+                       this.quote(tableName),
                        this.columns(tableDef)) + this.separator;
   },
   /* return rename table statement
    */
   renameTable: function(oldName, newName) {
-    return util.format('ALTER TABLE %s RENAME TO %s', 
+    return util.format('ALTER TABLE %s RENAME TO %s',
                       this.quote(oldName),
                       this.quote(newName)) + this.separator;
   },
   dropTable: function(tableName) {
-    return util.format('DROP TABLE %s', 
+    return util.format('DROP TABLE %s',
                       this.quote(tableName)) + this.separator;
   },
   addColumn: function(tableName, columnName, columnDef) {
@@ -369,7 +369,7 @@ var DialectAgent = {
     /**
      * refer to a table/column/alias
      *
-     * @param {string} resource  
+     * @param {string} resource
      */
     o: function(resource) {
       return function(builder) {
@@ -378,7 +378,7 @@ var DialectAgent = {
     },
     /**
      * sql count function
-     * 
+     *
      * @param {string|number}  [column]
      * @param {boolean}        [distinct]
      * @returns {string}
@@ -400,9 +400,10 @@ var DialectAgent = {
 
     /**
      * sql distinct function
-     * 
+     *
      * @param {string} column
      * @returns {string}
+     */
     distinct: function(columns) {
       if (!_.isArray(columns))
         columns = [columns];
@@ -410,11 +411,10 @@ var DialectAgent = {
         return 'DISTINCT ' + builder.quote(column);
       };
     },
-     */
 
     /**
      * sql avg function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -426,7 +426,7 @@ var DialectAgent = {
 
     /**
      * sql first function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -438,7 +438,7 @@ var DialectAgent = {
 
     /**
      * sql last function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -450,7 +450,7 @@ var DialectAgent = {
 
     /**
      * sql max function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -462,7 +462,7 @@ var DialectAgent = {
 
     /**
      * sql min function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -474,7 +474,7 @@ var DialectAgent = {
 
     /**
      * sql sum function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -486,7 +486,7 @@ var DialectAgent = {
 
     /**
      * sql ucase function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -498,7 +498,7 @@ var DialectAgent = {
 
     /**
      * sql lcase function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -524,7 +524,7 @@ var DialectAgent = {
 
     /**
      * sql len function
-     * 
+     *
      * @param {string} column
      * @returns {string}
      */
@@ -613,7 +613,7 @@ var DialectAgent = {
         return ' LIKE ' + builder.value(str) + esc;
       };
     },
-    
+
     /**
      * @param {string} str
      * @returns {function}
