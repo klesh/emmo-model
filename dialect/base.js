@@ -408,7 +408,7 @@ var DialectAgent = {
       if (!_.isArray(columns))
         columns = [columns];
       return function(builder) {
-        return 'DISTINCT ' + builder.quote(column);
+        return 'DISTINCT ' + columns.map(c => builder.quote(c));
       };
     },
 
