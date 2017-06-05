@@ -1,4 +1,4 @@
-vmInfo.name.startsWith('swarm-manager-')"use strict";
+"use strict";
 /* jshint node: true */
 
 var i = require('i')();
