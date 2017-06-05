@@ -1,4 +1,4 @@
-"use strict";
+vmInfo.name.startsWith('swarm-manager-')"use strict";
 /* jshint node: true */
 
 var i = require('i')();
@@ -515,9 +515,10 @@ EmmoModel.prototype.remove = function(database) {
  *   3. whenever shit happens during creating process, it will be deleted.
  *   4. migration failure should not affect existing databases.
  *
- * @fires EmmoModel#created
- * @fires EmmoModel#migrated
- * @fires EmmoModel#ready
+ * @fires EmmoModel#created     single database is created
+ * @fires EmmoModel#migrated    single database is migrated
+ * @fires EmmoModel#synced      single database is synced
+ * @fires EmmoModel#ready       all databases are ready
  * @param {string|array} [databases=ALL]
  */
 EmmoModel.prototype.sync = function(databases) {
@@ -551,6 +552,8 @@ EmmoModel.prototype.sync = function(databases) {
          */
         self.emit('migrated', database);
       });
+    }).then(function() {
+      self.emit('synced', database);
     });
   }).then(function() {
     /**
