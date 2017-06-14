@@ -380,11 +380,15 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   database = database || this.config.database;
   var session = new Session(this, database);
   var promise = job(session);
-  if (!promise || !_.isFunction(promise.finally))
+  if (!promise || !_.isFunction(promise.then))
     throw new Error("Must return a promise");
 
-  return promise.finally(function() {
-    return session.close();
+  return promise.then(function(data) {
+    session.close();
+    return data;
+  }, function(err) {
+    session.close();
+    return P.reject(err);
   });
 };
 
