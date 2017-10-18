@@ -1,6 +1,6 @@
 {
   "name": "emmo-model",
-  "version": "2.4.6",
+  "version": "2.4.7",
   "description": "Flexible lightweight orm framework, supports Structure Mirroring.",
   "main": "index.js",
   "repository": "git@github.com:klesh/emmo-model.git",

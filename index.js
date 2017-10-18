@@ -371,7 +371,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
     return arg2(arg1);
 
   var database, job, self = this;
-  if (_.isFunction(arg2)) {
+  if (typeof(arg2) === 'function') {
     job = arg2;
     database = arg1;
   } else {
@@ -380,7 +380,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
   database = database || this.config.database;
   var session = new Session(this, database);
   var promise = job(session);
-  if (!promise || !_.isFunction(promise.then))
+  if (!promise || typeof(promise.then) !== 'function')
     throw new Error("Must return a promise");
 
   return promise.then(function(data) {
@@ -397,7 +397,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
  */
 EmmoModel.prototype.transact = function(arg1, arg2) {
   var database = _.isString(arg1) ? arg1 : null;
-  var job = _.isFunction(arg2) ? arg2 : arg1;
+  var job = typeof(arg2) === 'function' ? arg2 : arg1;
 
   return this.scope(database, function(db) {
     return db.begin().then(function() {
@@ -611,7 +611,7 @@ var DEV = process.env.NODE_ENV !== 'production';
 em.mount = function(handler) {
   return function(req, res, next) {
     var promise = handler(req, res, next);
-    if (!_.isFunction(promise.then))
+    if (typeof(promise.then) !== 'function')
       next(new Error('Expect returning a promise instance'));
 
     promise.then(function(result) {
