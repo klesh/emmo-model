@@ -119,7 +119,7 @@ var DialectAgent = {
    * @param {Property}  proeprty    property definition
    */
   convertDate: function(text, property) {
-    return moment(text);
+    return text ? moment(text) : null;
   },
 
   /**
