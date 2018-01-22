@@ -166,9 +166,6 @@ var DialectAgent = {
       case 'double':
       case 'float':
       case 'numeric':
-        if (columnDef.length === null)
-          return columnDef.type;
-
         var length = columnDef.length || 10;
         var decimals = columnDef.decimals >= 0 ? columnDef.decimals : 2;
         return columnDef.type + '(' + length + ',' + decimals + ')';
