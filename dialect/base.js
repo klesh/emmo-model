@@ -566,6 +566,12 @@ var DialectAgent = {
       };
     },
 
+    cast(column, type) {
+      return function(builder) {
+        return 'CAST(' + builder.field(column) + ' AS ' + type + ')';
+      }
+    },
+
      /**
      * COALESCE function
      */
