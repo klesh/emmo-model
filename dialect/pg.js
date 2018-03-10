@@ -87,6 +87,9 @@ _.merge(module.exports, base, {
   comparators: {
     like: function like(str, type) {
       return function(builder) {
+        if (type === 'raw') {
+          return ' LIKE ' + builder.value(str);
+        }
         var esc = '';
         if (str.indexOf('%') >= 0) {
           esc = " ESCAPE '\\'";
