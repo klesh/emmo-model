@@ -597,11 +597,14 @@ var DialectAgent = {
 
     /**
      * @param {string} str  text to search
-     * @param {string} pos  'start', 'end', 'any'(default)
+     * @param {string} pos  'start', 'end', 'raw', 'any'(default)
      * @returns {function}
      */
     like: function like(str, type) {
       return function(builder) {
+        if (type === 'raw') {
+          return ' LIKE ' + builder.value(str);
+        }
         var esc = '';
         if (str.indexOf('%') >= 0) {
           esc = " ESCAPE '\\'";
