@@ -587,6 +587,14 @@ EmmoModel.prototype.dropCreate = function() {
  */
 var em = module.exports = new EmmoModel();
 
+em.pair = function() {
+  return '_' + Math.random();
+}
+
+em.or = function() {
+  return '$' + Math.random();
+}
+
 /**
  * create new EmmoModel instance
  *
