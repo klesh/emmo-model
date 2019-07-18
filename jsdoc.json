@@ -9,6 +9,6 @@
   },
   "plugins": ["plugins/markdown"],
   "opts": {
-    "destination": "../klesh.github.io/emmo-model/"
+    "destination": "docs"
   }
 }

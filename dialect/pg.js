@@ -1,4 +1,3 @@
-var _ = require('lodash');
 var base = require('./base.js');
 var pg = require('pg');
 var P = require('bluebird');
@@ -6,7 +5,7 @@ var util = require('util');
 
 P.promisifyAll(pg);
 
-_.merge(module.exports, base, {
+Object.assign(module.exports, base, {
   defaultDatabase: 'postgres',
   autoIncrement: '',
   stringConcatenate: '||',

@@ -1,4 +1,3 @@
-var _ = require('lodash');
 var base = require('./base.js');
 var mysql = require('mysql');
 var Connection = require('mysql/lib/Connection');
@@ -9,7 +8,7 @@ var urlParse = require('url').parse;
 P.promisifyAll(mysql);
 P.promisifyAll(Connection.prototype);
 
-_.merge(module.exports, base, {
+Object.assign(module.exports, base, {
   /**
    * Default database came with RDBMS server,
    * This is used to be connected for CREATE/DROP our databases.
@@ -36,7 +35,7 @@ _.merge(module.exports, base, {
    * @type {string|function}
    */
   stringConcatenate: function() {
-    var args = _.toArray(arguments);
+    var args = Array.from(arguments);
     return function(builder) {
       return "CONCATE_WS('', " + args.map(function(arg) {
         return builder.element(arg);
@@ -170,7 +169,7 @@ _.merge(module.exports, base, {
     var pools = this.pools;
     delete this.pools;
 
-    return P.map(_.values(pools), function(pool, connectionString) {
+    return P.map(Object.values(pools), function(pool, connectionString) {
       return pool.endAsync();
     });
   },
@@ -180,9 +179,7 @@ _.merge(module.exports, base, {
                       this.quote(newName)) + this.separator;
   },
   createPrimaryKey: function(tableName, primaryKeysInfo, modelDef) {
-    var hasAutoIncrement = _.some(primaryKeysInfo.columns, function(columnName) {
-      return _.find(modelDef.columns, { columnName: columnName }).autoIncrement;
-    });
+    const hasAutoIncrement = primaryKeysInfo.columns.find(cn => modelDef.columns.find(c => c.columnName === cn).autoIncrement);
     if (hasAutoIncrement) return '';
     return util.format('ALTER TABLE %s ADD PRIMARY KEY (%s)',
                       this.quote(tableName),

@@ -2,7 +2,6 @@
 /* jshint node: true */
 
 var util = require('util');
-var _ = require('lodash');
 var moment = require('moment');
 
 /**
@@ -119,7 +118,7 @@ var DialectAgent = {
    * @param {Property}  proeprty    property definition
    */
   convertDate: function(text, property) {
-    return moment(text);
+    return moment(text, moment.ISO_8601);
   },
 
   /**
@@ -143,9 +142,9 @@ var DialectAgent = {
   joinOrderedColumns: function(orderedColumns) {
     var self = this;
     var script = [];
-    _.forOwn(orderedColumns, function(order, columnName) {
-      script.push(self.quote(columnName) + ' ' + order);
-    });
+    for (const columnName in orderedColumns) {
+      script.push(self.quote(columnName) + ' ' + orderedColumns[order]);
+    }
     return script.join(', ');
   },
 
@@ -184,9 +183,9 @@ var DialectAgent = {
   columns: function(columnsDef) {
     var self = this;
     var script = [];
-    _.forOwn(columnsDef, function(columnDef, columnName) {
-      script.push(util.format('  %s %s', self.quote(columnDef.columnName), self.column(columnDef)));
-    });
+    for (const columnName in columnsDef) {
+      script.push(util.format('  %s %s', self.quote(columnDef.columnName), self.column(columnsDef[columnName])));
+    }
     return script.join(',\n');
   },
 
@@ -238,9 +237,9 @@ var DialectAgent = {
     script.push(this.createTable(modelDef.tableName, modelDef.columns, modelDef));
     script.push(this.createPrimaryKey(modelDef.tableName, modelDef.primaryKey, modelDef));
 
-    _.forEach(modelDef.indexes, function(indexInfo) {
+    for (const indexInfo of modelDef.indexes) {
       script.push(this.createIndex(modelDef.tableName, indexInfo, modelDef));
-    }, this);
+    }
     return script.join('\n');
   },
   /* return create table statement
@@ -402,7 +401,7 @@ var DialectAgent = {
      * @returns {string}
      */
     distinct: function(columns) {
-      if (!_.isArray(columns))
+      if (!Array.isArray(columns))
         columns = [columns];
       return function(builder) {
         return 'DISTINCT ' + columns.map(c => builder.quote(c));
@@ -576,7 +575,7 @@ var DialectAgent = {
      * COALESCE function
      */
     coalesce: function() {
-      var args = _.toArray(arguments);
+      var args = Array.from(arguments);
       if (args.length < 2)
         throw new Error('colalesce requires at least tow arguments');
       return function(builder) {
@@ -641,7 +640,7 @@ var DialectAgent = {
      * @returns {function}
      */
     in: function(array) {
-      array = arguments.length > 1 ? _.toArray(arguments) : array;
+      array = arguments.length > 1 ? Array.from(arguments) : array;
       return function(builder) {
         var sql = ' IN (';
         for (var i = 0, j = array.length; i < j; i++) {

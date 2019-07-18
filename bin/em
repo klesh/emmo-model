@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var argv = require('yargs').argv;
-var _ = require('lodash');
 var moment = require('moment');
 var path = require('path');
 var fs = require('fs');
@@ -107,7 +106,7 @@ var commanders = {
     em.init(config);
     */
     em.init();
-    em.sync(argv._.slice(1)).then(function() {
+    em.sync(Array.from(argv).slice(1)).then(function() {
       console.log('sync finish successfully');
       process.exit(0);
     });
@@ -129,5 +128,5 @@ if (commanders.hasOwnProperty(command)) {
   console.log('Usage: em <command>');
   console.log();
   console.log('where <command> is one of:');
-  console.log('  ' + _.keys(commanders).join(', '));
+  console.log('  ' + Object.keys(commanders).join(', '));
 }

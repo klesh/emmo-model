@@ -131,11 +131,11 @@ describe('SQL Query Builder Test', function() {
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: { age: 'DESC', id: 'ASC' } });
-    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id"');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id" ASC');
     should(builder.values).be.deepEqual([ ]);
 
     builder.select({ order: { age: 'DESC', id: 'ASC' }, offset: 10, limit: 5 });
-    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id" LIMIT $1 OFFSET $2');
+    should(builder.sql).be.exactly('SELECT "id", "nick", "password" AS "passwordHash", "isAdmin", "age", "email", "departmentId", "createdAt", "updatedAt" FROM "Users" ORDER BY "age" DESC, "id" ASC LIMIT $1 OFFSET $2');
     should(builder.values).be.deepEqual([ 5, 10 ]);
   });
 });

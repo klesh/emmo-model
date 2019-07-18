@@ -5,7 +5,6 @@ var i = require('i')();
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
-var _ = require('lodash');
 var P = require('bluebird');
 var V = require('validator');
 var EventEmitter = require('events');
@@ -17,7 +16,7 @@ var Migrator = require('./lib/migrator.js');
 var Store = require('./lib/store.js');
 
 var buildModel = require('./lib/model.js');
-var allValidators = _.keys(V).filter(fn => _.startsWith(fn, 'is') || [ 'contains', 'matches', 'equals' ].indexOf(fn) >= 0);
+var allValidators = Object.keys(V).filter(fn => fn.startsWith('is') || [ 'contains', 'matches', 'equals' ].indexOf(fn) >= 0);
 
 P.longStackTraces();
 
@@ -104,9 +103,9 @@ function EmmoModel(parent) {
 
   // clone all models to bind this instance.
   if (parent) {
-    _.each(parent.entities, function(entity, name) {
-      this.models = buildModel(this, name, entity);
-    }, this);
+    for (const name in parent.entities) {
+      this.models = buildModel(this, name, parent.entities[name]);
+    }
   }
 
 
@@ -129,7 +128,7 @@ util.inherits(EmmoModel, EventEmitter);
  */
 EmmoModel.prototype.define = function(name, properties, tableOptions) {
   // build up entity
-  if (_.isString(tableOptions)) {
+  if (typeof(tableOptions) === 'string') {
     tableOptions = {
       tableName: tableOptions
     };
@@ -152,11 +151,12 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     tableOptions: tableOptions
   };
 
-  _.each(properties, function(property, name) {
+  for (const name in properties) {
+    property = properties[name];
     property.$name = name;
 
     // create validator for property
-    if (!_.isArray(property.validators))
+    if (Array.isArray(property.validators))
       property.validators = [];
 
     if (property.autoIncrement) {
@@ -170,7 +170,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
         });
       }
 
-      _.each(_.intersection(allValidators, _.keys(property)), function(validatorName) {
+      for (const validatorName in allValidators.filter(v => v in property)) {
         var parameter = property[validatorName];
         var validator;
         if (parameter === true) {
@@ -184,7 +184,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
         }
         validator.reason = validatorName;
         property.validators.push(validator);
-      });
+      };
     }
 
     // columnName equals to property name defaulty
@@ -212,7 +212,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     if (property.primaryKey === true)
       entity.primaryKeyNames.push(name);
 
-  });
+  };
 
   if (entity.primaryKeyNames.length === 0)
     throw new Error(name + ' has not primary key');
@@ -252,7 +252,7 @@ EmmoModel.prototype.init = function(options, store) {
   if (!options) {
     this.configPath = path.resolve('./em.json');
     this.config = require(this.configPath);
-  } else if (_.isString(options)) {
+  } else if (typeof(options) === 'string') {
     this.configPath = options;
     this.config = require(path.resolve(this.configPath));
   } else {
@@ -260,17 +260,17 @@ EmmoModel.prototype.init = function(options, store) {
 
     var absPath = path.resolve('./em.json');
     if (fs.existsSync(absPath)) {
-      this.config = _.defaults(options, require(absPath));
+      this.config = Object.assign({}, require(absPath), options);
     }
   }
 
 
-  _.defaults(this.config, {
+  this.config = Object.assign({
     modelsPath: './models',
     migrationsPath:'./migrations',
     dialect: 'pg',
     connectionString: ''
-  });
+  }, this.config);
 
 
   if (!this.config.connectionString)
@@ -293,29 +293,31 @@ EmmoModel.prototype.init = function(options, store) {
   if (!this.parent && fs.existsSync(this.config.modelsPath)) {
     // load models
     var config = this.config;
-    _.each(fs.readdirSync(config.modelsPath), function(fileName) {
+    for (const fileName of fs.readdirSync(config.modelsPath)) {
       if (/\.js$/.test(fileName)) {
         require(path.resolve(config.modelsPath, fileName));
       }
-    });
+    };
   }
 
   // load dialect
   this.agent = require('./dialect/' + this.config.dialect + '.js');
 
   // copy database functions from dialect
-  _.each(this.agent.functions, function(f, n) {
+  for (const n in this.agent.functions) {
+    const f = this.agent.functions[n];
     this[n] = function() {
       return new Expression(f.apply(this.agent.functions, arguments), this, 'function');
     };
-  }, this);
+  }
 
   // copy database comparators from dialect
-  _.each(this.agent.comparators, function(f, n) {
+  for (const n in this.agent.comparators) {
+    const f = this.agent.comparators[n];
     this[n] = function() {
       return new Expression(f.apply(this.agent.comparators, arguments), this, 'comparator');
     };
-  }, this);
+  }
 
   return this;
 };
@@ -388,6 +390,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
     session.close();
     return data;
   }, function(err) {
+    session.query('ROLLBACK');
     session.close();
     return P.reject(err);
   });
@@ -397,7 +400,7 @@ EmmoModel.prototype.scope = function(arg1, arg2) {
  * Transaction support
  */
 EmmoModel.prototype.transact = function(arg1, arg2) {
-  var database = _.isString(arg1) ? arg1 : null;
+  var database = typeof(arg1) === 'string' ? arg1 : null;
   var job = typeof(arg2) === 'function' ? arg2 : arg1;
 
   return this.scope(database, function(db) {
@@ -467,7 +470,7 @@ EmmoModel.prototype.create = function(database) {
       });
     }).error(function(err) {
       // seems thing went south, create a debug file, as generated SQL Script along with ERROR information.
-      fs.writeFileSync(debug, migrator.getInitialSQL() + _.repeat('\n', 10) + util.inspect(err));
+      fs.writeFileSync(debug, migrator.getInitialSQL() + '\n\n\n\n\n\n' + util.inspect(err));
       // then remove useless database so that we can re-created it next time.
       return self.remove(database).finally(function() {
         return P.reject(new Error('An error ocurred during initialation, may causued by wrong model definition, check initial-debug.sql in your project folder'));
@@ -531,7 +534,7 @@ EmmoModel.prototype.sync = function(databases) {
   var self = this, p;
 
   if (databases) {
-    if (_.isString(databases))
+    if (typeof(databases) === 'string')
       databases = [ databases ];
 
     if (databases.length)
@@ -624,10 +627,7 @@ em.mount = function(handler) {
       next(new Error('Expect returning a promise instance'));
 
     promise.then(function(result) {
-      if (!_.isObject(result)) {
-        result = { code: 'SUCCESS', result: result };
-      }
-      res.json(result || { code: 'SUCCESS' });
+      res.json({ code: 'SUCCESS', result: result });
     }).catch(next);
   };
 };

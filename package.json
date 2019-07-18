@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": "git@github.com:klesh/emmo-model.git",
   "scripts": {
-    "test": "mocha test/*.js"
+    "tests": "node_modules/.bin/mocha tests/*.js"
   },
   "keywords": [
     "orm",
@@ -21,13 +21,14 @@
     "bluebird": "^2.9.34",
     "debug": "^2.2.0",
     "i": "^0.3.3",
-    "lodash": "^3.10.1",
+    "lodash": "^4.17.14",
     "moment": "^2.10.6",
     "validator": "^4.5.2",
     "yargs": "^3.32.0"
   },
   "devDependencies": {
     "colors": "^1.1.2",
+    "mocha": "^6.1.4",
     "mysql": "^2.10.2",
     "pg": "^4.5.1",
     "should": "^7.1.0",

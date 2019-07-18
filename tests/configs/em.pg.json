@@ -2,7 +2,7 @@
   "modelsPath": "tests/models",
   "migrationsPath": "tests/migrations",
   "dialect": "pg",
-  "connectionString": "postgres://kleshwong@localhost/%s",
+  "connectionString": "/var/run/postgresql %s",
   "database": "emtest",
   "children": [
     "emtest1"
