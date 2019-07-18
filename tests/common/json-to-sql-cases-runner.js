@@ -3,7 +3,6 @@ var path = require('path');
 var P = require('bluebird');
 var should = require('should');
 var util = require('util');
-var _ = require('lodash');
 var colors = require('colors');
 var EM = require('../../index.js');
 var env = require('../env.js');
@@ -12,9 +11,9 @@ P.promisifyAll(fs);
 P.longStackTraces();
 
 var em = EM.new();
-em.init(_.defaults({
+em.init(Object.assign({}, env, {
   database: 'sql_gen_test'
-}, env));
+}));
 
 // read line from console
 var readline = function(prompt) {

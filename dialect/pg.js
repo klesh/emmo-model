@@ -2,10 +2,11 @@ var base = require('./base.js');
 var pg = require('pg');
 var P = require('bluebird');
 var util = require('util');
+const {merge} = require('../lib/functions.js');
 
 P.promisifyAll(pg);
 
-Object.assign(module.exports, base, {
+merge(module.exports, base, {
   defaultDatabase: 'postgres',
   autoIncrement: '',
   stringConcatenate: '||',

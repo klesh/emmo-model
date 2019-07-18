@@ -4,11 +4,12 @@ var Connection = require('mysql/lib/Connection');
 var P = require('bluebird');
 var util = require('util');
 var urlParse = require('url').parse;
+const {merge} = require('../lib/functions.js');
 
 P.promisifyAll(mysql);
 P.promisifyAll(Connection.prototype);
 
-Object.assign(module.exports, base, {
+merge(module.exports, base, {
   /**
    * Default database came with RDBMS server,
    * This is used to be connected for CREATE/DROP our databases.

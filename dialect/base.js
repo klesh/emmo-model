@@ -1,8 +1,6 @@
-"use strict";
-/* jshint node: true */
-
 var util = require('util');
 var moment = require('moment');
+const {each} = require('../lib/functions.js');
 
 /**
  * This provoides common methods used for dialect implementation,
@@ -142,9 +140,9 @@ var DialectAgent = {
   joinOrderedColumns: function(orderedColumns) {
     var self = this;
     var script = [];
-    for (const columnName in orderedColumns) {
-      script.push(self.quote(columnName) + ' ' + orderedColumns[order]);
-    }
+    each(orderedColumns, (order, columnName) => {
+      script.push(self.quote(columnName) + ' ' + order);
+    })
     return script.join(', ');
   },
 
@@ -183,9 +181,9 @@ var DialectAgent = {
   columns: function(columnsDef) {
     var self = this;
     var script = [];
-    for (const columnName in columnsDef) {
+    each(columnsDef, (columnDef, columnName) => {
       script.push(util.format('  %s %s', self.quote(columnDef.columnName), self.column(columnsDef[columnName])));
-    }
+    });
     return script.join(',\n');
   },
 

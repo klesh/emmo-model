@@ -7,9 +7,9 @@ var util = require('util');
 
 describe('rebase tests (for legacy database merging)', function() {
   var em = EM.new();
-  em.init(_.defaults({
+  em.init(Object.assign({}, env, {
     database: 'em_legacy'
-  }, env));
+  }));
 
   em.define('User', {
     id: { type: 'int', unsigned: true, autoIncrement: true, primaryKey: true },

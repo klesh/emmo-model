@@ -37,7 +37,7 @@ describe('EmmoModel Test', function() {
     em.init(jsonPath);
 
     // remove all test database if exists
-    return P.all(_.map([ database, 'emtest1' ], function(name) {
+    return P.all([ database, 'emtest1' ].map(function(name) {
       return em.remove(name);
     })).finally(function() {
       var readyTriggered = false, createdTriggered;
@@ -152,7 +152,7 @@ describe('EmmoModel Test', function() {
         should(page1.length).be.exactly(2);
         should(page1[0].name).be.exactly('Role6');
         should(page1[1].name).be.exactly('Role5');
-        should(_.keys(page1[0]).length).be.exactly(2);
+        should(Object.keys(page1[0]).length).be.exactly(2);
         return Role.paginate({ size:2, page:3, field: [ 'id', 'name' ], order: { 'id': 'DESC' } });
       }).then(function(page3) {
         should(page3[0].name).be.exactly('Role2');
@@ -175,8 +175,8 @@ describe('EmmoModel Test', function() {
       should(users.length).be.exactly(2);
       return User.all({ where: { nick: em.not(em.in('OR1', 'OR2')) } });
     }).then(function(users) {
-      should(_.find(users, 'nick', 'OR1')).not.be.ok();
-      should(_.find(users, 'nick', 'OR2')).not.be.ok();
+      should(users.find(u => u.nick === 'OR1')).not.be.ok();
+      should(users.find(u => u.nick === 'OR2')).not.be.ok();
     });
   });
 

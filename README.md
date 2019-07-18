@@ -192,7 +192,7 @@ route.put('/:id', function(req, res) {
   em.scope('db1', function(db) {
     return db.update('User', req.body);
   }).then(function(affectedRows) {
-    res.json({ updatedFields: _.keys(req.body) });
+    res.json({ updatedFields: Object.keys(req.body) });
   });
 });
 

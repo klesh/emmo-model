@@ -9,6 +9,7 @@ var P = require('bluebird');
 var V = require('validator');
 var EventEmitter = require('events');
 var debug = require('debug')('emmo-model:index');
+const {each} = require('./lib/functions.js');
 
 var Session = require('./lib/session.js');
 var Expression = require('./lib/expression.js');
@@ -151,12 +152,11 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     tableOptions: tableOptions
   };
 
-  for (const name in properties) {
-    property = properties[name];
+  each(properties, (property, name) => {
     property.$name = name;
 
     // create validator for property
-    if (Array.isArray(property.validators))
+    if (!Array.isArray(property.validators))
       property.validators = [];
 
     if (property.autoIncrement) {
@@ -170,7 +170,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
         });
       }
 
-      for (const validatorName in allValidators.filter(v => v in property)) {
+      for (const validatorName of allValidators.filter(v => v in property)) {
         var parameter = property[validatorName];
         var validator;
         if (parameter === true) {
@@ -212,7 +212,7 @@ EmmoModel.prototype.define = function(name, properties, tableOptions) {
     if (property.primaryKey === true)
       entity.primaryKeyNames.push(name);
 
-  };
+  });
 
   if (entity.primaryKeyNames.length === 0)
     throw new Error(name + ' has not primary key');
@@ -303,6 +303,7 @@ EmmoModel.prototype.init = function(options, store) {
   // load dialect
   this.agent = require('./dialect/' + this.config.dialect + '.js');
 
+  debugger
   // copy database functions from dialect
   for (const n in this.agent.functions) {
     const f = this.agent.functions[n];
