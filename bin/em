@@ -46,7 +46,7 @@ var commanders = {
       var fileName = full + '.sql';
       fs.writeFile(path.resolve(em.migrationsPath, fileName), script, function(err) {
         if (err) {
-          console.log("Error occured while creating sql file: ", err.message);
+          console.log("Error occurred while creating sql file: ", err.message);
           console.log(err.stack);
           process.exit(1);
         } else {
@@ -57,13 +57,13 @@ var commanders = {
           var jsFileName = full + '.js';
           fs.readFile(path.resolve(__dirname, '../tpl/migration.js'), function(err, buff) {
             if (err) {
-              console.log("Error occured while reading js template: ", err.message);
+              console.log("Error occurred while reading js template: ", err.message);
               console.log(err.stack);
               process.exit(1)
             } else {
               fs.writeFile(path.resolve(em.migrationsPath, jsFileName), buff, function(err) {
                 if (err) {
-                  console.log('Error occured while creating js file: ', err.message);
+                  console.log('Error occurred while creating js file: ', err.message);
                   console.log(err.stack);
                   process.exit(1);
                 } else {
